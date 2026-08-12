@@ -4,6 +4,10 @@ module.exports = {
     './views/**/*.php',
     './public/**/*.php',
     './app/**/*.php',
+    './public/assets/js/app.js',
+    './public/assets/js/public-survey.js',
+    './public/assets/js/admin-surveys.js',
+    './public/assets/js/pages/*.js',
   ],
   theme: {
     extend: {

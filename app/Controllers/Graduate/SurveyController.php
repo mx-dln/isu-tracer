@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
+use App\Models\Graduate;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
 use App\Services\EmploymentSyncService;
@@ -22,14 +23,16 @@ class SurveyController extends Controller
     public function index(Request $request): void
     {
         $graduateId = (int) (auth()->graduate_id ?? 0);
+        $gradYear = (int) (Graduate::find($graduateId)['graduation_year'] ?? 0);
         $surveys = Database::fetchAll(
             "SELECT s.*,
                     (SELECT COUNT(*) FROM survey_responses r
                       WHERE r.survey_id = s.id AND r.graduate_id = ? AND r.status = 'submitted') AS submitted
              FROM surveys s
              WHERE s.deleted_at IS NULL AND s.status IN ('active', 'closed')
+               AND s.tracer_year = ?
              ORDER BY s.tracer_year DESC, s.created_at DESC",
-            [$graduateId]
+            [$graduateId, $gradYear]
         );
 
         $this->view('graduate/survey/index', [
@@ -48,6 +51,10 @@ class SurveyController extends Controller
         }
 
         $graduateId = (int) (auth()->graduate_id ?? 0);
+        $gradYear = (int) (Graduate::find($graduateId)['graduation_year'] ?? 0);
+        if ((int) $survey['tracer_year'] !== $gradYear) {
+            abort(404, 'Survey not found.');
+        }
         $existing = SurveyResponse::findForGraduate((int) $survey['id'], $graduateId);
         $submitted = $existing && $existing['status'] === 'submitted';
 
@@ -93,6 +100,10 @@ class SurveyController extends Controller
         }
 
         $graduateId = (int) (auth()->graduate_id ?? 0);
+        $gradYear = (int) (Graduate::find($graduateId)['graduation_year'] ?? 0);
+        if ((int) $survey['tracer_year'] !== $gradYear) {
+            $this->error('This survey is only available to graduates of its tracer year.', 'graduate/survey');
+        }
         $existing = SurveyResponse::findForGraduate((int) $survey['id'], $graduateId);
         if ($existing && $existing['status'] === 'submitted') {
             $this->error('You have already submitted a response for this survey.', 'graduate/survey/' . (int) $survey['id']);

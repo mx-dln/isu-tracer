@@ -18,11 +18,6 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
                     <h2 class="text-xl font-bold">Welcome, <?= e(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''))) ?>!</h2>
                     <p class="text-brand-100 text-sm mt-1">
                         <?= e($user['student_number'] ?? '') ?> &middot; <?= e($user['program_name'] ?? '') ?> &middot; Batch <?= e($user['batch_year'] ?? '') ?>
-                        <?php if ((int) ($user['is_validated'] ?? 0) === 1): ?>
-                            <span class="badge bg-white/20 text-white">Validated</span>
-                        <?php else: ?>
-                            <span class="badge bg-white/20 text-white">Pending validation</span>
-                        <?php endif; ?>
                     </p>
                 </div>
                 <a href="<?= url('graduate/profile') ?>" class="btn bg-white/15 hover:bg-white/25 text-white border border-white/30">

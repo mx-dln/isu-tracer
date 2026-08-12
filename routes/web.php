@@ -240,6 +240,8 @@ $router->post('/graduate/curriculum-feedback', 'Graduate\CurriculumController@su
 // Graduate dashboard
 // ------------------------------------------------------------------
 $router->get('/graduate/dashboard', 'Graduate\DashboardController@index')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
+$router->get('/graduate/profile', 'Graduate\ProfileController@index')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
+$router->post('/graduate/profile', 'Graduate\ProfileController@update')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 
 // ------------------------------------------------------------------
 // Graduate: notifications (Phase 9)

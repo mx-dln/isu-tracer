@@ -41,7 +41,9 @@ class DashboardController extends Controller
         $activeSurvey = Database::fetch(
             'SELECT s.* FROM surveys s
              WHERE s.status = "active" AND s.deleted_at IS NULL
-             ORDER BY s.created_at DESC LIMIT 1'
+               AND s.tracer_year = ?
+             ORDER BY s.created_at DESC LIMIT 1',
+            [(int) $user['graduation_year']]
         );
 
         $submitted = false;
