@@ -32,6 +32,13 @@ $formatAnswer = static function (array $q) use ($answers, $optionTexts): string 
         return implode(', ', $labels);
     }
     $value = (string) ($row['answer_value'] ?? '');
+    if ($q['type'] === 'rating') {
+        $n = (int) $value;
+        $valid = \App\Models\SurveyQuestion::decodeValidation($q['validation'] ?? null);
+        $max = max(1, (int) ($valid['stars'] ?? $q['likert_scale'] ?? 5));
+        $n = max(0, min($n, $max));
+        return str_repeat('★', $n) . str_repeat('☆', $max - $n);
+    }
     if (in_array($q['type'], ['single_choice', 'dropdown', 'likert', 'yes_no'], true)) {
         return $texts[$value] ?? $value;
     }
@@ -61,7 +68,7 @@ $formatAnswer = static function (array $q) use ($answers, $optionTexts): string 
                 <?php foreach ($section['questions'] as $q): ?>
                     <div>
                         <p class="text-sm font-medium text-ink-800"><?= e($q['question_text']) ?></p>
-                        <p class="text-sm text-ink-600 mt-0.5 whitespace-pre-line"><?= nl2br(e($formatAnswer($q))) ?></p>
+                        <p class="<?= $q['type'] === 'rating' ? 'text-2xl leading-none text-amber-500 mt-0.5 whitespace-pre-line' : 'text-sm text-ink-600 mt-0.5 whitespace-pre-line' ?>"><?= nl2br(e($formatAnswer($q))) ?></p>
                     </div>
                 <?php endforeach; ?>
                 <?php if (empty($section['questions'])): ?>
