@@ -1,0 +1,11 @@
+# ISU Tracer - shared hosting (InfinityFree)
+# Serves the app from the public/ subfolder without changing the document root.
+# Upload the FULL project into htdocs/, keep this file at htdocs/.htaccess.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Already inside /public - let public/.htaccess handle it.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
