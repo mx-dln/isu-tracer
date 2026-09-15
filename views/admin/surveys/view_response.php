@@ -121,16 +121,16 @@ $formatAnswer = static function (array $q) use ($answers, $optionTexts): string 
                         <?php if ($q['type'] === 'image_upload' && $formatAnswer($q) !== '—'): ?>
                             <?php $proofUrl = url($base . '/responses/' . (int) $response['id'] . '/proofs/' . (int) $q['id']); ?>
                             <div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-3">
-                                <a href="<?= e($proofUrl) ?>" target="_blank" class="block rounded-lg border border-ink-200 bg-ink-50 overflow-hidden shrink-0" style="width: 144px; height: 108px;">
+                                <button type="button" class="block rounded-lg border border-ink-200 bg-ink-50 overflow-hidden shrink-0 cursor-zoom-in" style="width: 144px; height: 108px;" data-proof-zoom="<?= e($proofUrl) ?>" data-proof-title="<?= e($q['question_text']) ?>">
                                     <img src="<?= e($proofUrl) ?>" alt="Uploaded proof" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                                </a>
+                                </button>
                                 <div class="min-w-0">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-ink-500">Uploaded image</p>
                                     <p class="text-sm font-medium text-ink-900 mt-1">Proof of employment attached</p>
-                                    <a href="<?= e($proofUrl) ?>" target="_blank" class="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline mt-2">
-                                        <i data-lucide="external-link" class="w-4 h-4"></i>
-                                        Open full image
-                                    </a>
+                                    <button type="button" class="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline mt-2" data-proof-zoom="<?= e($proofUrl) ?>" data-proof-title="<?= e($q['question_text']) ?>">
+                                        <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                                        Zoom image
+                                    </button>
                                 </div>
                             </div>
                         <?php else: ?>
@@ -146,3 +146,61 @@ $formatAnswer = static function (array $q) use ($answers, $optionTexts): string 
         </div>
     <?php endforeach; ?>
 </div>
+
+<div id="proof-zoom-modal" class="hidden fixed inset-0 bg-ink-950/85 p-4" style="z-index: 120;" aria-hidden="true">
+    <div class="h-full w-full flex flex-col">
+        <div class="flex items-center justify-between gap-3 text-white mb-3">
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wide text-white/60">Uploaded proof</p>
+                <p id="proof-zoom-title" class="text-sm font-semibold truncate">Proof image</p>
+            </div>
+            <button type="button" id="proof-zoom-close" class="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/20" aria-label="Close image preview">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                Close
+            </button>
+        </div>
+        <button type="button" id="proof-zoom-backdrop" class="flex-1 min-h-0 rounded-lg bg-black/30 p-2 cursor-zoom-out" aria-label="Close image preview">
+            <img id="proof-zoom-image" src="" alt="Uploaded proof preview" class="m-auto rounded-lg shadow-2xl" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        </button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('proof-zoom-modal');
+        var image = document.getElementById('proof-zoom-image');
+        var title = document.getElementById('proof-zoom-title');
+        var close = document.getElementById('proof-zoom-close');
+        var backdrop = document.getElementById('proof-zoom-backdrop');
+        if (!modal || !image || !title) return;
+
+        function openZoom(src, label) {
+            image.src = src;
+            title.textContent = label || 'Proof image';
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            if (close) close.focus();
+        }
+
+        function closeZoom() {
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+            image.src = '';
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('[data-proof-zoom]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openZoom(button.dataset.proofZoom || '', button.dataset.proofTitle || '');
+            });
+        });
+        if (close) close.addEventListener('click', closeZoom);
+        if (backdrop) backdrop.addEventListener('click', closeZoom);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
+                closeZoom();
+            }
+        });
+    });
+</script>
