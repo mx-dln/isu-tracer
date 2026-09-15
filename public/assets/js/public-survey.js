@@ -36,6 +36,14 @@
                 });
             });
         });
+
+        document.querySelectorAll('input[type="file"][accept*="image"]').forEach(function (input) {
+            input.addEventListener('change', function () {
+                const label = input.closest('div')?.querySelector('[data-file-name]');
+                if (!label) return;
+                label.textContent = input.files && input.files[0] ? input.files[0].name : 'No file selected';
+            });
+        });
     }
 
     function init() {
@@ -126,6 +134,12 @@
 
             for (const input of inputs) {
                 if (input.type === 'hidden' || input.type === 'radio' || input.type === 'checkbox') continue;
+                if (input.type === 'file') {
+                    if (input.files && input.files.length > 0) {
+                        ok = true;
+                    }
+                    continue;
+                }
                 const isSelect = input.tagName === 'SELECT';
                 const empty = isSelect ? input.value === '' : (input.value === null || String(input.value).trim() === '');
                 if (empty) continue;

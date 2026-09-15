@@ -157,6 +157,10 @@ $validationErrors = \App\Core\Session::pullErrors();
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button type="button" id="manual-open" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-200 text-sm font-medium text-ink-700 hover:bg-ink-50" aria-controls="manual-slider" aria-expanded="false" aria-label="Open user manual">
+                        <i data-lucide="circle-help" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">User Manual</span>
+                    </button>
                     <!-- Notifications -->
                     <div class="relative" id="notification-dropdown">
                         <button id="notification-bell" class="relative p-2 rounded-lg hover:bg-ink-100 text-ink-600" aria-label="Notifications">
@@ -225,12 +229,14 @@ $validationErrors = \App\Core\Session::pullErrors();
     </div>
 </div>
 
+<?= \App\Core\View::partial('partials/_manual_slider', ['role' => $role]) ?>
+
 <!-- Toast container -->
 <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 w-80 max-w-[calc(100vw-2rem)]"></div>
 
 <script src="<?= asset('js/lucide.umd.min.js') ?>"></script>
 <script src="<?= asset('js/chart.umd.min.js') ?>"></script>
-<script src="<?= asset('js/app.js') ?>"></script>
+<script src="<?= asset('js/app.js') ?>?v=<?= filemtime((string) config('app.paths.public') . '/assets/js/app.js') ?>"></script>
 <script>
     // Global notification center wiring
     document.addEventListener('DOMContentLoaded', function () {

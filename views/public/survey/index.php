@@ -61,7 +61,7 @@ foreach ($sections as $sec) {
             <p class="text-sm text-ink-500">This survey has no questions yet. Please check back later.</p>
         </div>
     <?php else: ?>
-        <form method="POST" action="<?= url('survey/respond/' . rawurlencode((string) ($token ?? '')) . '/submit') ?>" id="survey-form" novalidate>
+        <form method="POST" action="<?= url('survey/respond/' . rawurlencode((string) ($token ?? '')) . '/submit') ?>" id="survey-form" enctype="multipart/form-data" novalidate>
             <?= csrf_field() ?>
 
             <?php foreach ($sections as $idx => $section): ?>

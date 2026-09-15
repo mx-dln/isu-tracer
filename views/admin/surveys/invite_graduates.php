@@ -20,6 +20,10 @@ $generatePending = (bool) ($generatePending ?? false);
 $generateTargets = $generateTargets ?? [];
 $sendEmail = (bool) ($sendEmail ?? true);
 $sendSms = (bool) ($sendSms ?? false);
+$customMessage = (string) ($customMessage ?? '');
+$jobLink = (string) ($jobLink ?? '');
+$customRecipientScope = (string) ($customRecipientScope ?? 'all');
+$customRecipientScope = in_array($customRecipientScope, ['all', 'unemployed'], true) ? $customRecipientScope : 'all';
 $base = 'admin/surveys/' . (int) $survey['id'];
 $generateUrl = url($base . '/invitations/generate');
 
@@ -252,6 +256,43 @@ $targetList = $generatePending ? $generateTargets : $savedTargets;
                 </div>
             </div>
 
+            <div>
+                <label class="label" for="custom_message">Custom message</label>
+                <textarea name="custom_message" id="custom_message" rows="4" class="input" maxlength="1000" placeholder="Optional note to include in the email and SMS. Example: Please answer this tracer survey before Friday."><?= e($customMessage) ?></textarea>
+                <p class="text-xs text-ink-500 mt-1">Email receives the full note. SMS uses a shortened version to help keep the message within one credit.</p>
+            </div>
+
+            <div>
+                <label class="label" for="job_link">Job hiring link</label>
+                <input type="url" name="job_link" id="job_link" class="input" maxlength="500" placeholder="https://example.com/job-posting or https://bit.ly/..." value="<?= e($jobLink) ?>">
+                <p class="text-xs text-ink-500 mt-1">Optional. Add a hiring post or job opportunity link that fits the target graduates. Use a short link for SMS.</p>
+                <a href="https://tinyurl.com/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-800 hover:underline mt-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                    Shorten long job links with TinyURL
+                </a>
+                <p class="text-xs mt-1" id="sms-length-hint" data-sample-survey-url="<?= e(url('s/' . str_repeat('a', 64))) ?>"></p>
+            </div>
+
+            <div>
+                <p class="text-sm font-medium text-ink-800 mb-2">Send custom message and job link to</p>
+                <div class="grid gap-2">
+                    <label class="flex items-start gap-2 rounded-lg border border-ink-200 px-3 py-2 cursor-pointer hover:bg-ink-50">
+                        <input type="radio" name="custom_recipient_scope" value="all" class="mt-0.5 w-4 h-4 border-ink-300 text-brand-700 focus:ring-brand-500" <?= $customRecipientScope === 'all' ? 'checked' : '' ?>>
+                        <span>
+                            <span class="block text-sm font-medium text-ink-800">All selected graduates</span>
+                            <span class="block text-xs text-ink-500 mt-0.5">Everyone receives the custom message and job hiring link.</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-2 rounded-lg border border-ink-200 px-3 py-2 cursor-pointer hover:bg-ink-50">
+                        <input type="radio" name="custom_recipient_scope" value="unemployed" class="mt-0.5 w-4 h-4 border-ink-300 text-brand-700 focus:ring-brand-500" <?= $customRecipientScope === 'unemployed' ? 'checked' : '' ?>>
+                        <span>
+                            <span class="block text-sm font-medium text-ink-800">Unemployed graduates only</span>
+                            <span class="block text-xs text-ink-500 mt-0.5">All selected graduates still receive the survey invitation, but only unemployed graduates receive the custom/job content.</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
             <div class="flex items-center justify-end gap-2 pt-1">
                 <button type="button" class="btn-secondary h-9" data-close-modal>Cancel</button>
                 <button type="submit" class="btn-success h-9"><i data-lucide="send" class="w-4 h-4"></i> Generate &amp; Notify</button>
@@ -270,6 +311,9 @@ $targetList = $generatePending ? $generateTargets : $savedTargets;
         var rows = Array.from(document.querySelectorAll('.row-check'));
         var countEl = document.getElementById('selected-count');
         var saveBtn = document.getElementById('save-selection-btn');
+        var customMessage = document.getElementById('custom_message');
+        var jobLink = document.getElementById('job_link');
+        var smsHint = document.getElementById('sms-length-hint');
 
         function update() {
             var n = rows.filter(function (r) { return r.checked; }).length;
@@ -323,6 +367,32 @@ $targetList = $generatePending ? $generateTargets : $savedTargets;
             m.classList.remove('hidden');
         });
 
+        function normalizeLink(value) {
+            value = String(value || '').trim();
+            if (!value) return '';
+            return /^https?:\/\//i.test(value) ? value : 'https://' + value;
+        }
+
+        function updateSmsHint() {
+            if (!smsHint) return;
+            var surveyUrl = smsHint.dataset.sampleSurveyUrl || '';
+            var link = normalizeLink(jobLink ? jobLink.value : '');
+            var note = String(customMessage ? customMessage.value : '').replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').trim();
+            var message = 'ISU IAT Tracer:\n';
+            var remaining = 160 - message.length - surveyUrl.length - (link ? (6 + link.length) : 0) - 2;
+            if (note && remaining > 8) {
+                message += note.slice(0, remaining) + '\n';
+            }
+            message += surveyUrl;
+            if (link) message += '\nJob: ' + link;
+            var len = message.length;
+            smsHint.textContent = 'Estimated SMS length: ' + len + '/160 characters' + (len > 160 ? ' — use a shorter job link for one SMS credit.' : ' — should fit one SMS credit.');
+            smsHint.className = 'text-xs mt-1 ' + (len > 160 ? 'text-amber-700' : 'text-ink-500');
+        }
+        if (customMessage) customMessage.addEventListener('input', updateSmsHint);
+        if (jobLink) jobLink.addEventListener('input', updateSmsHint);
+
         update();
+        updateSmsHint();
     });
 </script>

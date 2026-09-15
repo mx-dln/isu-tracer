@@ -162,6 +162,12 @@ class SurveyInvitationController extends Controller
         $sendEmail = (int) ($request->input('send_email') ?? 0) === 1;
         $sendSms   = (int) ($request->input('send_sms') ?? 0) === 1;
         $confirmed = (int) ($request->input('confirm') ?? 0) === 1;
+        $customMessage = trim((string) ($request->input('custom_message') ?? ''));
+        $customMessage = mb_substr($customMessage, 0, 1000);
+        $jobLink = $this->normalizeOptionalUrl((string) ($request->input('job_link') ?? ''));
+        $customRecipientScope = in_array($request->input('custom_recipient_scope'), ['all', 'unemployed'], true)
+            ? (string) $request->input('custom_recipient_scope')
+            : 'all';
 
         if (!$confirmed) {
             // Confirmation step: show the target list + notification options.
@@ -171,6 +177,9 @@ class SurveyInvitationController extends Controller
                 'generateTargets' => array_values($targets),
                 'sendEmail'       => $sendEmail,
                 'sendSms'         => $sendSms,
+                'customMessage'   => $customMessage,
+                'jobLink'         => $jobLink,
+                'customRecipientScope' => $customRecipientScope,
             ]));
             return;
         }
@@ -199,9 +208,12 @@ class SurveyInvitationController extends Controller
                 'token' => $token,
                 'link'  => url('survey/respond/' . $token),
             ];
+            $sendCustomContent = $customRecipientScope === 'all' || $this->isGraduateUnemployed((int) $gid);
+            $messageForGraduate = $sendCustomContent ? $customMessage : '';
+            $jobLinkForGraduate = $sendCustomContent ? $jobLink : '';
 
             if ($sendEmail) {
-                $res = $this->sendInvitationEmail((int) $gid, $survey, $token, (int) $invId);
+                $res = $this->sendInvitationEmail((int) $gid, $survey, $token, (int) $invId, $messageForGraduate, $jobLinkForGraduate);
                 if (in_array($res['status'], ['sent', 'simulated'], true)) {
                     $summary['email_sent']++;
                     $emailedIds[] = (int) $invId;
@@ -212,7 +224,7 @@ class SurveyInvitationController extends Controller
                 }
             }
             if ($sendSms) {
-                $res = $this->sendInvitationSms((int) $gid, $survey, $token, (int) $invId);
+                $res = $this->sendInvitationSms((int) $gid, $survey, $token, (int) $invId, $messageForGraduate, $jobLinkForGraduate);
                 if (in_array($res['status'], ['sent', 'simulated'], true)) {
                     $summary['sms_sent']++;
                 } elseif ($res['status'] === 'skipped') {
@@ -428,7 +440,7 @@ class SurveyInvitationController extends Controller
         ];
     }
 
-    private function buildInvitationEmail(array $graduate, array $survey, string $token): array
+    private function buildInvitationEmail(array $graduate, array $survey, string $token, string $customMessage = '', string $jobLink = ''): array
     {
         $subject = 'IAT Graduate Tracer Study – Survey Invitation';
         $link = url('survey/respond/' . $token);
@@ -442,18 +454,26 @@ class SurveyInvitationController extends Controller
             'institution_name'   => (string) setting('university_name', 'Isabela State University'),
             'campus_name'        => (string) setting('campus_name', 'Cauayan Campus'),
             'institute_name'     => (string) setting('institute_name', 'Institute of Agricultural Technology'),
+            'custom_message'     => $customMessage,
+            'job_link'           => $jobLink,
         ];
         $html = View::partial('emails/survey-invitation', ['vars' => $vars]);
         $text = "Dear {$vars['graduate_name']},\n\n"
             . "You are invited to participate in the IAT Graduate Tracer Study.\n\n"
-            . "Please complete the survey: {$vars['survey_title']}\n"
-            . "Survey link: {$link}\n\n"
+            . "Please complete the survey: {$vars['survey_title']}\n";
+        if ($customMessage !== '') {
+            $text .= "\n{$customMessage}\n";
+        }
+        if ($jobLink !== '') {
+            $text .= "\nJob hiring link: {$jobLink}\n";
+        }
+        $text .= "\nSurvey link: {$link}\n\n"
             . "Thank you for your participation.\n"
             . "{$vars['institute_name']}\n{$vars['institution_name']}\n{$vars['campus_name']}";
         return ['subject' => $subject, 'html' => $html, 'text' => $text];
     }
 
-    private function sendInvitationEmail(int $graduateId, array $survey, string $token, int $invitationId): array
+    private function sendInvitationEmail(int $graduateId, array $survey, string $token, int $invitationId, string $customMessage = '', string $jobLink = ''): array
     {
         $graduate = Graduate::find($graduateId);
         $recipient = $graduate['email'] ?? '';
@@ -467,7 +487,7 @@ class SurveyInvitationController extends Controller
             return ['status' => 'simulated', 'error' => null];
         }
 
-        $email = $this->buildInvitationEmail($graduate, $survey, $token);
+        $email = $this->buildInvitationEmail($graduate, $survey, $token, $customMessage, $jobLink);
         try {
             $ok = Mailer::send($recipient, $email['subject'], $email['html'], [], $email['text']);
         } catch (\Throwable $e) {
@@ -482,7 +502,7 @@ class SurveyInvitationController extends Controller
         return ['status' => $status, 'error' => $ok ? null : 'mail_failed'];
     }
 
-    private function sendInvitationSms(int $graduateId, array $survey, string $token, int $invitationId): array
+    private function sendInvitationSms(int $graduateId, array $survey, string $token, int $invitationId, string $customMessage = '', string $jobLink = ''): array
     {
         $graduate = Graduate::find($graduateId);
         $number = $graduate['contact_number'] ?? '';
@@ -491,22 +511,62 @@ class SurveyInvitationController extends Controller
             return ['status' => 'skipped', 'error' => 'no_valid_mobile_number'];
         }
 
-        // Keep the SMS short (1 Semaphore credit = 160 GSM chars). Uses the
-        // short /s/{token} alias, strips non-ASCII, and truncates the title
-        // so the whole message fits in 160 characters.
+        // Keep the SMS well under 160 characters for one Semaphore credit and
+        // leave the URL bare so mobile SMS apps detect it as tappable.
         $url = url('s/' . $token);
-        $title = trim(preg_replace('/[^\x20-\x7E]/u', '', (string) $survey['title']));
-        $base = "ISU-Cauayan IAT Tracer\nComplete: ";
-        $tail = "\nLink: " . $url;
-        $maxTitle = 160 - strlen($base) - strlen($tail);
-        if (strlen($title) > $maxTitle) {
-            $title = mb_strimwidth($title, 0, max(0, $maxTitle), '');
-        }
-        $message = $base . $title . $tail;
+        $message = $this->buildInvitationSmsMessage($url, $customMessage, $jobLink);
 
         $res = (new SemaphoreService())->send($number, $message);
         $this->logNotification((int) $survey['id'], $invitationId, $graduateId, 'sms', $number, $res['status'], $res['message_id'], $res['error']);
         return $res;
+    }
+
+    private function buildInvitationSmsMessage(string $surveyUrl, string $customMessage = '', string $jobLink = ''): string
+    {
+        $prefix = 'ISU IAT Tracer:';
+        $lines = [$prefix];
+
+        $custom = trim(preg_replace('/[^\x20-\x7E]/u', ' ', $customMessage) ?? '');
+        $custom = preg_replace('/\s+/', ' ', $custom) ?? '';
+        if ($custom !== '') {
+            $reserved = strlen($prefix) + 1 + strlen($surveyUrl);
+            if ($jobLink !== '') {
+                $reserved += 6 + strlen($jobLink);
+            }
+            $maxCustom = 160 - $reserved - 2;
+            if ($maxCustom > 8) {
+                $lines[] = mb_strimwidth($custom, 0, $maxCustom, '');
+            }
+        }
+
+        $lines[] = $surveyUrl;
+        if ($jobLink !== '') {
+            $lines[] = 'Job: ' . $jobLink;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function normalizeOptionalUrl(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        if (!preg_match('/^https?:\/\//i', $url)) {
+            $url = 'https://' . $url;
+        }
+        return filter_var($url, FILTER_VALIDATE_URL) ? mb_substr($url, 0, 500) : '';
+    }
+
+    private function isGraduateUnemployed(int $graduateId): bool
+    {
+        $row = Database::fetch(
+            'SELECT status FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL ORDER BY updated_at DESC, id DESC LIMIT 1',
+            [$graduateId]
+        );
+
+        return ($row['status'] ?? null) === 'unemployed';
     }
 
     private function logNotification(int $surveyId, ?int $invitationId, int $graduateId, string $channel, string $recipient, string $status, int|string|null $providerMessageId, ?string $error): void

@@ -171,6 +171,17 @@ class SurveyController extends Controller
         }
 
         $structure = Survey::structure((int) $survey['id']);
+        $respondent = Database::fetch(
+            'SELECT g.id, g.student_number, g.first_name, g.middle_name, g.last_name, g.suffix,
+                    g.email, g.contact_number, p.code AS program_code, p.name AS program_name,
+                    b.year AS batch_year
+             FROM graduates g
+             LEFT JOIN programs p ON p.id = g.program_id
+             LEFT JOIN batches b ON b.id = g.batch_id
+             WHERE g.id = ?',
+            [(int) $response['graduate_id']]
+        );
+
         $this->view('admin/surveys/view_response', [
             'title'   => 'Response #' . (int) $response['id'],
             'subtitle' => $survey['title'],
@@ -178,7 +189,52 @@ class SurveyController extends Controller
             'sections' => $structure['sections'],
             'answers' => SurveyResponse::answers((int) $response['id']),
             'response' => $response,
+            'respondent' => $respondent,
         ]);
+    }
+
+    public function proof(Request $request, array $params): never
+    {
+        $survey = Survey::find((int) $params['id']);
+        if (!$survey) {
+            abort(404, 'Survey not found.');
+        }
+        $response = SurveyResponse::find((int) ($params['rid'] ?? 0));
+        if (!$response || (int) $response['survey_id'] !== (int) $survey['id']) {
+            abort(404, 'Response not found.');
+        }
+
+        $answer = Database::fetch(
+            'SELECT a.answer_value, q.type
+             FROM survey_answers a
+             JOIN survey_questions q ON q.id = a.question_id
+             WHERE a.response_id = ? AND a.question_id = ?',
+            [(int) $response['id'], (int) ($params['qid'] ?? 0)]
+        );
+        if (!$answer || $answer['type'] !== 'image_upload' || empty($answer['answer_value'])) {
+            abort(404, 'Uploaded proof not found.');
+        }
+
+        $relative = str_replace('\\', '/', (string) $answer['answer_value']);
+        if (str_contains($relative, '..') || !str_starts_with($relative, 'uploads/survey-proofs/')) {
+            abort(404, 'Uploaded proof not found.');
+        }
+
+        $file = storage_path($relative);
+        if (!is_file($file)) {
+            abort(404, 'Uploaded proof not found.');
+        }
+
+        $mime = mime_content_type($file) ?: 'application/octet-stream';
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], true)) {
+            abort(404, 'Uploaded proof not found.');
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($file));
+        header('Content-Disposition: inline; filename="' . basename($file) . '"');
+        readfile($file);
+        exit;
     }
 
     public function activate(Request $request, array $params): void

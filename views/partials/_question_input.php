@@ -66,6 +66,18 @@ switch ($q['type']) {
         echo '<input type="time" name="' . e($name) . '" id="q-' . (int) $q['id'] . '" class="input" ' . ($required ? 'required' : '') . ' value="' . e($textValue($value)) . '">';
         break;
 
+    case 'image_upload':
+        $fileName = 'answer_file_' . (int) $q['id'];
+        echo '<div class="rounded-lg border border-dashed border-ink-300 bg-ink-50/70 p-4">';
+        echo '<label class="flex items-center gap-3 cursor-pointer">';
+        echo '<span class="inline-flex w-10 h-10 items-center justify-center rounded-lg bg-white border border-ink-200 text-brand-700"><i data-lucide="image-up" class="w-5 h-5"></i></span>';
+        echo '<span class="min-w-0"><span class="block text-sm font-medium text-ink-800">Upload image</span><span class="block text-xs text-ink-500">JPG, PNG, GIF, or WebP. Max 5 MB.</span></span>';
+        echo '<input type="file" name="' . e($fileName) . '" id="q-' . (int) $q['id'] . '" class="sr-only" accept="image/jpeg,image/png,image/gif,image/webp" ' . ($required ? 'required' : '') . '>';
+        echo '</label>';
+        echo '<p class="mt-2 text-xs text-ink-500" data-file-name>No file selected</p>';
+        echo '</div>';
+        break;
+
     case 'dropdown':
         echo '<select name="' . e($name) . '" id="q-' . (int) $q['id'] . '" class="input" ' . ($required ? 'required' : '') . '>';
         echo '<option value="">-- Select --</option>';

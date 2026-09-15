@@ -133,6 +133,60 @@
     if (overlay) overlay.addEventListener('click', closeSidebar);
 
     // ------------------------------------------------------------------
+    // User manual slide-over
+    // ------------------------------------------------------------------
+    const manualOpen = document.getElementById('manual-open');
+    const manualClose = document.getElementById('manual-close');
+    const manualSlider = document.getElementById('manual-slider');
+    const manualBackdrop = document.getElementById('manual-backdrop');
+    let manualBackdropTimer = null;
+
+    function openManual() {
+        if (!manualSlider || !manualBackdrop || !manualOpen) return;
+        if (manualBackdropTimer) window.clearTimeout(manualBackdropTimer);
+        manualBackdrop.classList.remove('hidden');
+        manualSlider.classList.remove('hidden');
+        manualSlider.classList.add('flex');
+        window.requestAnimationFrame(() => {
+            manualSlider.style.transform = 'translateX(0)';
+        });
+        manualSlider.setAttribute('aria-hidden', 'false');
+        manualOpen.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+        if (manualClose) manualClose.focus();
+    }
+
+    function closeManual(instant = false) {
+        if (!manualSlider || !manualBackdrop || !manualOpen) return;
+        if (manualBackdropTimer) window.clearTimeout(manualBackdropTimer);
+        manualSlider.style.transform = 'translateX(100%)';
+        manualSlider.setAttribute('aria-hidden', 'true');
+        manualOpen.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+        if (instant) {
+            manualSlider.classList.add('hidden');
+            manualSlider.classList.remove('flex');
+            manualBackdrop.classList.add('hidden');
+            return;
+        }
+        manualBackdropTimer = window.setTimeout(() => {
+            manualSlider.classList.add('hidden');
+            manualSlider.classList.remove('flex');
+            manualBackdrop.classList.add('hidden');
+        }, 200);
+    }
+
+    closeManual(true);
+    if (manualOpen) manualOpen.addEventListener('click', openManual);
+    if (manualClose) manualClose.addEventListener('click', closeManual);
+    if (manualBackdrop) manualBackdrop.addEventListener('click', closeManual);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && manualSlider && manualSlider.getAttribute('aria-hidden') === 'false') {
+            closeManual();
+        }
+    });
+
+    // ------------------------------------------------------------------
     // Alert dismiss
     // ------------------------------------------------------------------
     document.querySelectorAll('.alert-dismiss').forEach((btn) => {

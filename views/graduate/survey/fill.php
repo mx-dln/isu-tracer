@@ -25,7 +25,7 @@ $scripts = '<script src="' . asset('js/public-survey.js') . '"></script>';
             <p class="text-sm text-ink-500">This survey has no questions yet. Please check again later.</p>
         </div>
     <?php else: ?>
-        <form method="POST" action="<?= url('graduate/survey/' . (int) $survey['id'] . '/submit') ?>" class="space-y-6">
+        <form method="POST" action="<?= url('graduate/survey/' . (int) $survey['id'] . '/submit') ?>" class="space-y-6" enctype="multipart/form-data">
             <?= csrf_field() ?>
             <?php foreach ($sections as $section): ?>
                 <div class="card">

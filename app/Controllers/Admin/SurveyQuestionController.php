@@ -139,7 +139,7 @@ class SurveyQuestionController extends Controller
             'type'           => $type,
             'likert_scale'   => $data['likert_scale'] ?? null,
             'is_required'    => $data['is_required'] ?? null,
-            'sort_order'     => $data['sort_order'] ?? 0,
+            'sort_order'     => $data['sort_order'] ?? null,
             'options'        => $options,
             'min'            => $data['min'] ?? null,
             'max'            => $data['max'] ?? null,

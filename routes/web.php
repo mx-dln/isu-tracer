@@ -162,6 +162,7 @@ $router->post('/admin/surveys/sections/reorder', 'Admin\SurveySectionController@
 // ------------------------------------------------------------------
 $router->get('/admin/surveys/{id}/responses', 'Admin\SurveyController@responses')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/surveys/{id}/responses/{rid}', 'Admin\SurveyController@showResponse')->middleware(AuthMiddleware::class, AdminMiddleware::class);
+$router->get('/admin/surveys/{id}/responses/{rid}/proofs/{qid}', 'Admin\SurveyController@proof')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/surveys/{id}/preview', 'Admin\SurveyController@preview')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 
 // ------------------------------------------------------------------

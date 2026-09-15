@@ -27,6 +27,13 @@ final class SurveyQuestion
             );
             $sectionId = $first ? (int) $first['id'] : null;
         }
+        $sortOrder = $data['sort_order'] ?? null;
+        if ($sortOrder === null || $sortOrder === '') {
+            $sortOrder = (int) Database::fetch(
+                'SELECT COALESCE(MAX(sort_order), 0) AS sort_order FROM survey_questions WHERE survey_id = ? AND deleted_at IS NULL',
+                [$surveyId]
+            )['sort_order'] + 1;
+        }
         Database::run(
             'INSERT INTO survey_questions
                 (survey_id, section_id, question_key, question_text, help_text, type,
@@ -42,7 +49,7 @@ final class SurveyQuestion
                 in_array($data['type'], ['likert', 'linear_scale', 'rating'], true) ? (int) ($data['likert_scale'] ?? 5) : null,
                 self::encodeValidation($data),
                 isset($data['is_required']) ? 1 : 0,
-                (int) ($data['sort_order'] ?? 0),
+                (int) $sortOrder,
             ]
         );
         $id = (int) Database::lastInsertId();
@@ -329,6 +336,7 @@ final class SurveyQuestion
             'date' => 'Date', 'single_choice' => 'Single Choice', 'multiple_choice' => 'Multiple Choice',
             'dropdown' => 'Dropdown', 'likert' => 'Likert Scale', 'yes_no' => 'Yes / No',
             'linear_scale' => 'Linear Scale', 'rating' => 'Rating', 'time' => 'Time',
+            'image_upload' => 'Image Upload',
         ];
         return $labels[$type] ?? ucfirst($type);
     }

@@ -167,6 +167,16 @@ $noOptionTypes = ['long_text', 'date', 'time'];
                     <p class="text-sm text-ink-500">Respondents choose either <strong>Yes</strong> or <strong>No</strong>. These options are fixed.</p>
                 </div>
 
+                <div class="panel-image" data-panel="image_upload" style="<?= $type === 'image_upload' ? '' : 'display:none' ?>">
+                    <div class="flex items-start gap-3 rounded-lg border border-dashed border-ink-300 bg-white p-4">
+                        <i data-lucide="image-up" class="w-5 h-5 text-brand-700 mt-0.5 shrink-0"></i>
+                        <div>
+                            <p class="text-sm font-medium text-ink-800">Respondents upload one image file.</p>
+                            <p class="text-xs text-ink-500 mt-0.5">Accepted formats: JPG, PNG, GIF, or WebP. Maximum size: 5 MB.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="panel-empty text-sm text-ink-500" data-panel-empty style="<?= in_array($type, $noOptionTypes, true) ? '' : 'display:none' ?>">
                     No additional settings for this question type.
                 </div>
