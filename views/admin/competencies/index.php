@@ -11,9 +11,12 @@ $searchCat = $searchCat ?? '';
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <h2 class="text-xl font-bold text-ink-900">Competencies</h2>
-            <p class="text-sm text-ink-500">Competency framework &amp; self-assessment results</p>
+            <p class="text-sm text-ink-500">Manage competency categories and self-assessment items</p>
         </div>
         <div class="flex items-center gap-2">
+            <a href="<?= url('admin/competencies') ?>" class="btn-secondary">
+                <i data-lucide="users" class="w-4 h-4"></i> Respondents
+            </a>
             <a href="<?= url('admin/competencies/analysis') ?>" class="btn-secondary">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analysis
             </a>
@@ -67,7 +70,7 @@ $searchCat = $searchCat ?? '';
     <div class="card">
         <div class="card-header">
             <h3 class="font-semibold text-ink-800">Categories</h3>
-            <form method="GET" action="<?= url('admin/competencies') ?>" class="flex items-center gap-2">
+            <form method="GET" action="<?= url('admin/competencies/manage') ?>" class="flex items-center gap-2">
                 <input type="search" name="search_cat" class="input !w-56 !py-1.5" placeholder="Search category" value="<?= e($searchCat) ?>">
                 <button type="submit" class="btn-secondary !py-1.5">Search</button>
             </form>
@@ -125,8 +128,9 @@ $searchCat = $searchCat ?? '';
         </div>
         <?= \App\Core\View::partial('partials/pagination', [
             'paginator' => $categories,
-            'path'      => 'admin/competencies',
+            'path'      => 'admin/competencies/manage',
             'query'     => ['search_cat' => $searchCat],
+            'page_param'=> 'cat_page',
         ]) ?>
     </div>
 
@@ -134,7 +138,7 @@ $searchCat = $searchCat ?? '';
     <div class="card">
         <div class="card-header">
             <h3 class="font-semibold text-ink-800">Competencies</h3>
-            <form method="GET" action="<?= url('admin/competencies') ?>" class="flex flex-wrap items-center gap-2">
+            <form method="GET" action="<?= url('admin/competencies/manage') ?>" class="flex flex-wrap items-center gap-2">
                 <select name="category_id" class="input !w-auto !py-1.5">
                     <option value="">All categories</option>
                     <?php foreach ($allCategories as $c): ?>
@@ -203,8 +207,9 @@ $searchCat = $searchCat ?? '';
         </div>
         <?= \App\Core\View::partial('partials/pagination', [
             'paginator' => $competencies,
-            'path'      => 'admin/competencies',
+            'path'      => 'admin/competencies/manage',
             'query'     => array_filter($filters, static fn ($v) => $v !== null && $v !== ''),
+            'page_param'=> 'page',
         ]) ?>
     </div>
 </div>

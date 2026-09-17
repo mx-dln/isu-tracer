@@ -130,11 +130,49 @@ $typeLabel = [
                 <label class="label" for="job_description">Job Description</label>
                 <textarea name="job_description" id="job_description" rows="3" class="input"><?= e($value('job_description')) ?></textarea>
             </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+                <label class="label" for="proof_image_url">Proof Image Link</label>
+                <input type="url" name="proof_image_url" id="proof_image_url" class="input" placeholder="https://..." value="<?= e($value('proof_image_url')) ?>">
+                <p class="text-xs text-ink-500 mt-1">Optional link to employment proof hosted outside the system.</p>
+            </div>
         </div>
         <div class="card-footer flex justify-end">
             <button type="submit" class="btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Save Changes</button>
         </div>
     </form>
+
+    <?php if (!empty($p['proof_image_path']) || !empty($p['proof_image_url'])): ?>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="font-semibold text-ink-800">Proof of Employment</h3>
+            </div>
+            <div class="card-body">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <?php if (!empty($p['proof_image_path'])):
+                        $proofUrl = url('admin/employment/' . (int) $p['id'] . '/proof'); ?>
+                        <button type="button" class="block rounded-lg border border-ink-200 bg-ink-50 overflow-hidden shrink-0 cursor-zoom-in" style="width: 180px; height: 135px;" data-proof-zoom="<?= e($proofUrl) ?>" data-proof-title="Proof of employment">
+                            <img src="<?= e($proofUrl) ?>" alt="Proof of employment" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                        </button>
+                    <?php endif; ?>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-ink-900">Graduate submitted proof for this employment profile.</p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <?php if (!empty($p['proof_image_path'])): ?>
+                                <button type="button" class="btn-secondary h-9" data-proof-zoom="<?= e($proofUrl) ?>" data-proof-title="Proof of employment">
+                                    <i data-lucide="zoom-in" class="w-4 h-4"></i> Zoom uploaded image
+                                </button>
+                            <?php endif; ?>
+                            <?php if (!empty($p['proof_image_url'])): ?>
+                                <a href="<?= e($p['proof_image_url']) ?>" target="_blank" rel="noopener noreferrer" class="btn-secondary h-9">
+                                    <i data-lucide="external-link" class="w-4 h-4"></i> Open proof link
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Employment history -->
     <div class="card">
@@ -181,3 +219,61 @@ $typeLabel = [
         </div>
     </div>
 </div>
+
+<div id="proof-zoom-modal" class="hidden fixed inset-0 bg-ink-950/85 p-4" style="z-index: 120;" aria-hidden="true">
+    <div class="h-full w-full flex flex-col">
+        <div class="flex items-center justify-between gap-3 text-white mb-3">
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wide text-white/60">Employment proof</p>
+                <p id="proof-zoom-title" class="text-sm font-semibold truncate">Proof image</p>
+            </div>
+            <button type="button" id="proof-zoom-close" class="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/20" aria-label="Close image preview">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                Close
+            </button>
+        </div>
+        <button type="button" id="proof-zoom-backdrop" class="flex-1 min-h-0 rounded-lg bg-black/30 p-2 cursor-zoom-out" aria-label="Close image preview">
+            <img id="proof-zoom-image" src="" alt="Employment proof preview" class="m-auto rounded-lg shadow-2xl" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        </button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('proof-zoom-modal');
+        var image = document.getElementById('proof-zoom-image');
+        var title = document.getElementById('proof-zoom-title');
+        var close = document.getElementById('proof-zoom-close');
+        var backdrop = document.getElementById('proof-zoom-backdrop');
+        if (!modal || !image || !title) return;
+
+        function openZoom(src, label) {
+            image.src = src;
+            title.textContent = label || 'Proof image';
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            if (close) close.focus();
+        }
+
+        function closeZoom() {
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+            image.src = '';
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('[data-proof-zoom]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openZoom(button.dataset.proofZoom || '', button.dataset.proofTitle || '');
+            });
+        });
+        if (close) close.addEventListener('click', closeZoom);
+        if (backdrop) backdrop.addEventListener('click', closeZoom);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
+                closeZoom();
+            }
+        });
+    });
+</script>

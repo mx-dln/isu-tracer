@@ -196,6 +196,7 @@ $router->post('/s/{token}/submit', 'PublicSurveyController@submit');
 // ------------------------------------------------------------------
 $router->get('/admin/employment', 'Admin\EmploymentController@index')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/employment/{id}', 'Admin\EmploymentController@show')->middleware(AuthMiddleware::class, AdminMiddleware::class);
+$router->get('/admin/employment/{id}/proof', 'Admin\EmploymentController@proof')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->put('/admin/employment/{id}', 'Admin\EmploymentController@update')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->post('/admin/employment/{id}/sync', 'Admin\EmploymentController@syncFromSurvey')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 
@@ -216,6 +217,7 @@ $router->delete('/graduate/employment/history/{id}', 'Graduate\EmploymentControl
 // Admin: competencies & curriculum feedback (Phase 6)
 // ------------------------------------------------------------------
 $router->get('/admin/competencies', 'Admin\CompetencyController@index')->middleware(AuthMiddleware::class, AdminMiddleware::class);
+$router->get('/admin/competencies/manage', 'Admin\CompetencyController@manage')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/competencies/analysis', 'Admin\CompetencyController@analysis')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->post('/admin/competencies/categories', 'Admin\CompetencyController@storeCategory')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->put('/admin/competencies/categories/{id}', 'Admin\CompetencyController@updateCategory')->middleware(AuthMiddleware::class, AdminMiddleware::class);

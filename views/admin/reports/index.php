@@ -5,6 +5,13 @@ $reports = $reports ?? [];
 $filters = $filters ?? [];
 $programs = $filters['programs'] ?? [];
 $batches = $filters['batches'] ?? [];
+$sectors = $filters['sectors'] ?? [];
+$statusLabel = [
+    'employed' => 'Employed',
+    'self_employed' => 'Self-Employed',
+    'unemployed' => 'Unemployed',
+    'further_studies' => 'Further Studies',
+];
 ?>
 <div class="space-y-6">
 
@@ -17,7 +24,7 @@ $batches = $filters['batches'] ?? [];
     <div class="card">
         <div class="card-header"><h3 class="font-semibold text-ink-800">Generate Report</h3></div>
         <div class="card-body">
-            <form method="POST" action="<?= url('admin/reports/generate') ?>" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <form method="POST" action="<?= url('admin/reports/generate') ?>" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
                 <?= csrf_field() ?>
                 <div>
                     <label class="label" for="r-type">Report Type</label>
@@ -53,7 +60,25 @@ $batches = $filters['batches'] ?? [];
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="md:col-span-4 flex justify-end">
+                <div>
+                    <label class="label" for="r-status">Employment Status</label>
+                    <select name="status" id="r-status" class="input">
+                        <option value="">All Statuses</option>
+                        <?php foreach ($statusLabel as $key => $label): ?>
+                            <option value="<?= e($key) ?>"><?= e($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="label" for="r-sector">Employment Sector</label>
+                    <select name="sector_id" id="r-sector" class="input">
+                        <option value="">All Sectors</option>
+                        <?php foreach ($sectors as $s): ?>
+                            <option value="<?= (int) $s['id'] ?>"><?= e($s['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="md:col-span-6 flex justify-end">
                     <button type="submit" class="btn-primary"><i data-lucide="file-down" class="w-4 h-4"></i> Generate</button>
                 </div>
             </form>

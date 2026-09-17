@@ -53,6 +53,7 @@ class ReportController extends Controller
             'program_id' => $request->input('program_id') !== '' && $request->input('program_id') !== null ? (int) $request->input('program_id') : null,
             'batch_id'   => $request->input('batch_id') !== '' && $request->input('batch_id') !== null ? (int) $request->input('batch_id') : null,
             'status'     => trim((string) $request->input('status')),
+            'sector_id'  => $request->input('sector_id') !== '' && $request->input('sector_id') !== null ? (int) $request->input('sector_id') : null,
         ];
 
         try {

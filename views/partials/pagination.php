@@ -6,6 +6,7 @@
 $paginator = $paginator ?? [];
 $path = $path ?? '';
 $query = $query ?? [];
+$pageParam = $page_param ?? 'page';
 $page = max(1, (int) ($paginator['page'] ?? 1));
 $lastPage = max(1, (int) ($paginator['last_page'] ?? 1));
 $total = (int) ($paginator['total'] ?? 0);
@@ -14,8 +15,8 @@ if ($lastPage <= 1) {
     return;
 }
 
-$build = static function (int $p) use ($query, $path): string {
-    $q = array_merge($query, ['page' => $p]);
+$build = static function (int $p) use ($query, $path, $pageParam): string {
+    $q = array_merge($query, [$pageParam => $p]);
     return url($path . '?' . http_build_query($q));
 };
 ?>

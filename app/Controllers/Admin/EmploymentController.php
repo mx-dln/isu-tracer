@@ -88,6 +88,7 @@ class EmploymentController extends Controller
         $data['sector_id'] = !empty($data['sector_id']) ? (int) $data['sector_id'] : null;
         $data['is_related_to_program'] = ($data['is_related_to_program'] ?? '') !== '' ? (int) $data['is_related_to_program'] : null;
         $data['job_relevance_rating'] = !empty($data['job_relevance_rating']) ? (int) $data['job_relevance_rating'] : null;
+        $data['proof_image_url'] = $this->normalizeOptionalUrl((string) ($data['proof_image_url'] ?? ''));
 
         EmploymentProfile::save((int) $profile['graduate_id'], $data);
         $this->audit('update', 'employment', "Updated employment profile #{$profile['id']} (graduate {$profile['graduate_id']}).");
@@ -116,5 +117,46 @@ class EmploymentController extends Controller
         $newId = (new EmploymentSyncService())->syncFromResponse((int) $profile['graduate_id'], (int) $response['id']);
         $this->audit('sync', 'employment', "Synced employment profile from survey response (graduate {$profile['graduate_id']}).");
         $this->success('Employment profile synced from the latest survey response.', 'admin/employment/' . $newId);
+    }
+
+    public function proof(Request $request, array $params): never
+    {
+        $profile = EmploymentProfile::find((int) $params['id']);
+        if (!$profile || empty($profile['proof_image_path'])) {
+            abort(404, 'Employment proof not found.');
+        }
+
+        $relative = ltrim(str_replace('\\', '/', (string) $profile['proof_image_path']), '/');
+        if (str_contains($relative, '..') || !str_starts_with($relative, 'uploads/employment-proofs/')) {
+            abort(404, 'Employment proof not found.');
+        }
+
+        $path = storage_path($relative);
+        if (!is_file($path)) {
+            abort(404, 'Employment proof not found.');
+        }
+
+        $mime = mime_content_type($path) ?: 'application/octet-stream';
+        if (!str_starts_with($mime, 'image/')) {
+            abort(404, 'Employment proof not found.');
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . (string) filesize($path));
+        header('Cache-Control: private, max-age=3600');
+        readfile($path);
+        exit;
+    }
+
+    private function normalizeOptionalUrl(string $url): ?string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return null;
+        }
+        if (!preg_match('/^https?:\/\//i', $url)) {
+            $url = 'https://' . $url;
+        }
+        return filter_var($url, FILTER_VALIDATE_URL) ? mb_substr($url, 0, 500) : null;
     }
 }

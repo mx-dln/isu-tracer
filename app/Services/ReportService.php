@@ -142,14 +142,77 @@ final class ReportService
             ];
         }, array_keys($sectors), array_values($sectors));
 
+        $timeToFirstJob = $analytics->timeToEmploymentDistribution($filters);
+        $timeRows = array_map(static function ($name, array $s) {
+            return [
+                'range' => $name,
+                'count' => $s['count'],
+                'percent' => $s['percentage'],
+            ];
+        }, array_keys($timeToFirstJob), array_values($timeToFirstJob));
+
+        $where = ['g.deleted_at IS NULL', 'ep.deleted_at IS NULL', 'ep.is_current = 1'];
+        $params = [];
+        if (!empty($filters['program_id'])) {
+            $where[] = 'g.program_id = ?';
+            $params[] = (int) $filters['program_id'];
+        }
+        if (!empty($filters['batch_id'])) {
+            $where[] = 'g.batch_id = ?';
+            $params[] = (int) $filters['batch_id'];
+        }
+        if (!empty($filters['status'])) {
+            $where[] = 'ep.status = ?';
+            $params[] = $filters['status'];
+        }
+        if (!empty($filters['sector_id'])) {
+            $where[] = 'ep.sector_id = ?';
+            $params[] = (int) $filters['sector_id'];
+        }
+
+        $detailRows = Database::fetchAll(
+            'SELECT g.student_number, g.last_name, g.first_name, p.code AS program, b.year AS batch,
+                    ep.status, ep.job_title, ep.employer, COALESCE(es.name, ep.sector_other) AS sector,
+                    ep.first_employment_date,
+                    TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(g.graduation_year, "-06-15"), "%Y-%m-%d"), ep.first_employment_date) AS first_job_months,
+                    CASE WHEN ep.proof_image_path IS NOT NULL OR ep.proof_image_url IS NOT NULL THEN "Yes" ELSE "No" END AS has_proof
+             FROM employment_profiles ep
+             JOIN graduates g ON g.id = ep.graduate_id
+             JOIN programs p ON p.id = g.program_id
+             JOIN batches b ON b.id = g.batch_id
+             LEFT JOIN employment_sectors es ON es.id = ep.sector_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY g.last_name, g.first_name',
+            $params
+        );
+
         $kpis = $analytics->kpis($filters);
 
         return [
             'title'   => 'Employment Statistics',
-            'subtitle' => 'Employment status distribution and sector breakdown',
+            'subtitle' => 'Employment status, sector breakdown, and time to first job in months',
             'kpis'    => $kpis,
             'status'  => ['headers' => $headers, 'rows' => $rows],
             'sectors' => ['headers' => $sectorHeaders, 'rows' => $sectorRows],
+            'time_to_first_job' => ['headers' => ['Time to First Job', 'Graduates', 'Percent'], 'rows' => $timeRows],
+            'details' => [
+                'headers' => ['Student #', 'Name', 'Program', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector', 'First Employment Date', 'Time to First Job (Months)', 'Proof Submitted'],
+                'rows' => array_map(static function (array $row) use ($labels): array {
+                    return [
+                        $row['student_number'],
+                        trim(($row['last_name'] ?? '') . ', ' . ($row['first_name'] ?? '')),
+                        $row['program'],
+                        $row['batch'],
+                        $labels[$row['status']] ?? ucwords(str_replace('_', ' ', (string) $row['status'])),
+                        $row['job_title'] ?? '',
+                        $row['employer'] ?? '',
+                        $row['sector'] ?? '',
+                        $row['first_employment_date'] ?? '',
+                        $row['first_job_months'] !== null ? (int) $row['first_job_months'] : '',
+                        $row['has_proof'],
+                    ];
+                }, $detailRows),
+            ],
         ];
     }
 
@@ -316,7 +379,7 @@ final class ReportService
                 }
                 $r++;
             }
-            foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors'] as $key => $sectionTitle) {
+            foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors', 'time_to_first_job' => 'Time to First Job', 'details' => 'Employment Details'] as $key => $sectionTitle) {
                 if (!empty($dataset[$key]['rows'])) {
                     $sheet->fromArray([[$sectionTitle]], null, 'A' . $r);
                     $sheet->getStyle('A' . $r)->getFont()->setBold(true);
@@ -363,7 +426,7 @@ final class ReportService
                 fputcsv($out, $dataset['columns']($row), ',', '"', '');
             }
         } else {
-            foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors'] as $key => $sectionTitle) {
+            foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors', 'time_to_first_job' => 'Time to First Job', 'details' => 'Employment Details'] as $key => $sectionTitle) {
                 if (empty($dataset[$key]['rows'])) {
                     continue;
                 }
@@ -404,7 +467,7 @@ final class ReportService
         }
 
         // Tabular sections.
-        foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors'] as $key => $sectionTitle) {
+        foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors', 'time_to_first_job' => 'Time to First Job', 'details' => 'Employment Details'] as $key => $sectionTitle) {
             if (!empty($dataset[$key]['rows'])) {
                 $body .= '<h3>' . $sectionTitle . '</h3><table><thead><tr>';
                 foreach ($dataset[$key]['headers'] as $h) {

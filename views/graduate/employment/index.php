@@ -22,7 +22,7 @@ $typeLabel = [
 <div class="space-y-6">
 
     <!-- Current employment form -->
-    <form method="POST" action="<?= url('graduate/employment') ?>" class="card">
+    <form method="POST" action="<?= url('graduate/employment') ?>" class="card" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <div class="card-header">
             <h3 class="font-semibold text-ink-800">Current Employment</h3>
@@ -98,6 +98,31 @@ $typeLabel = [
             <div class="sm:col-span-2 lg:col-span-3">
                 <label class="label" for="job_description">Brief Description of Job Duties</label>
                 <textarea name="job_description" id="job_description" rows="3" class="input"><?= e($value('job_description')) ?></textarea>
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3 rounded-lg border border-ink-200 bg-ink-50 p-4">
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <div class="flex-1">
+                        <label class="label" for="proof_image">Proof of Employment Image</label>
+                        <input type="file" name="proof_image" id="proof_image" class="input" accept="image/jpeg,image/png,image/gif,image/webp">
+                        <p class="text-xs text-ink-500 mt-1">Upload a JPG, PNG, GIF, or WebP image up to 5MB. Use this when your status is employed or self-employed.</p>
+                    </div>
+                    <div class="flex-1">
+                        <label class="label" for="proof_image_url">Proof Image Link</label>
+                        <input type="url" name="proof_image_url" id="proof_image_url" class="input" placeholder="https://..." value="<?= e($value('proof_image_url')) ?>">
+                        <p class="text-xs text-ink-500 mt-1">Optional. Paste a link if your proof is already hosted online.</p>
+                    </div>
+                </div>
+                <?php if (!empty($profile['proof_image_path']) || !empty($profile['proof_image_url'])): ?>
+                    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-600">
+                        <span class="badge-green">Proof saved</span>
+                        <?php if (!empty($profile['proof_image_url'])): ?>
+                            <a href="<?= e($profile['proof_image_url']) ?>" target="_blank" rel="noopener noreferrer" class="font-medium text-brand-700 hover:underline">Open proof link</a>
+                        <?php endif; ?>
+                        <?php if (!empty($profile['proof_image_path'])): ?>
+                            <span>Uploaded image is on file.</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         <div class="card-footer flex justify-end">

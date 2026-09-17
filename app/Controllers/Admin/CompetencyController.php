@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Models\Competency;
 use App\Models\CompetencyCategory;
+use App\Models\CompetencyResponse;
 use App\Services\AnalyticsService;
 use App\Validators\Validator;
 
@@ -19,9 +20,29 @@ class CompetencyController extends Controller
 {
     public function index(Request $request): void
     {
+        $filters = [
+            'search'      => trim((string) $request->query('search')),
+            'program_id'  => $request->query('program_id') !== null && $request->query('program_id') !== '' ? (int) $request->query('program_id') : null,
+            'batch_id'    => $request->query('batch_id') !== null && $request->query('batch_id') !== '' ? (int) $request->query('batch_id') : null,
+            'category_id' => $request->query('category_id') !== null && $request->query('category_id') !== '' ? (int) $request->query('category_id') : null,
+        ];
+
+        $this->view('admin/competencies/respondents', [
+            'title'      => 'Competency Respondents',
+            'subtitle'   => 'Graduates who answered the competency self-assessment',
+            'responses'  => CompetencyResponse::respondents(array_filter($filters, fn ($v) => $v !== null && $v !== ''), max(1, (int) $request->query('page', 1)), 15),
+            'filters'    => $filters,
+            'programs'   => \App\Models\Program::all(true),
+            'batches'    => \App\Models\Batch::all(true),
+            'categories' => CompetencyCategory::all(true),
+        ]);
+    }
+
+    public function manage(Request $request): void
+    {
         $this->view('admin/competencies/index', [
-            'title'    => 'Competencies',
-            'subtitle' => 'Competency framework, self-assessments and weighted analysis',
+            'title'    => 'Manage Competencies',
+            'subtitle' => 'Competency framework, categories, and self-assessment items',
             'categories' => CompetencyCategory::paginate(trim((string) $request->query('search_cat')) ?: null, max(1, (int) $request->query('cat_page', 1)), 15),
             'competencies' => Competency::paginate(
                 $request->query('category_id') !== null && $request->query('category_id') !== '' ? (int) $request->query('category_id') : null,
@@ -59,7 +80,7 @@ class CompetencyController extends Controller
 
         CompetencyCategory::create($data);
         $this->audit('create', 'competencies', "Created competency category: {$data['name']}.");
-        $this->success('Competency category added.', 'admin/competencies');
+        $this->success('Competency category added.', 'admin/competencies/manage');
     }
 
     public function updateCategory(Request $request, array $params): void
@@ -79,7 +100,7 @@ class CompetencyController extends Controller
 
         CompetencyCategory::update((int) $params['id'], $data);
         $this->audit('update', 'competencies', "Updated competency category: {$data['name']}.");
-        $this->success('Competency category updated.', 'admin/competencies');
+        $this->success('Competency category updated.', 'admin/competencies/manage');
     }
 
     public function destroyCategory(Request $request, array $params): void
@@ -91,7 +112,7 @@ class CompetencyController extends Controller
         }
         CompetencyCategory::softDelete((int) $params['id']);
         $this->audit('delete', 'competencies', "Deleted competency category: {$cat['name']}.");
-        $this->success('Competency category removed.', 'admin/competencies');
+        $this->success('Competency category removed.', 'admin/competencies/manage');
     }
 
     // ---- Competencies ----
@@ -109,7 +130,7 @@ class CompetencyController extends Controller
 
         Competency::create((int) $data['category_id'], $data);
         $this->audit('create', 'competencies', "Created competency: {$data['name']}.");
-        $this->success('Competency added.', 'admin/competencies');
+        $this->success('Competency added.', 'admin/competencies/manage');
     }
 
     public function update(Request $request, array $params): void
@@ -129,7 +150,7 @@ class CompetencyController extends Controller
 
         Competency::update((int) $params['id'], $data);
         $this->audit('update', 'competencies', "Updated competency: {$data['name']}.");
-        $this->success('Competency updated.', 'admin/competencies');
+        $this->success('Competency updated.', 'admin/competencies/manage');
     }
 
     public function destroy(Request $request, array $params): void
@@ -141,6 +162,6 @@ class CompetencyController extends Controller
         }
         Competency::softDelete((int) $params['id']);
         $this->audit('delete', 'competencies', "Deleted competency: {$comp['name']}.");
-        $this->success('Competency removed.', 'admin/competencies');
+        $this->success('Competency removed.', 'admin/competencies/manage');
     }
 }
