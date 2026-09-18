@@ -86,7 +86,8 @@ final class Graduate
                     g.program_id, g.batch_id, g.graduation_year,
                     p.code AS program_code, p.name AS program_name,
                     b.year AS batch_year,
-                    ep.status AS employment_status, ep.job_title
+                    ep.id AS employment_profile_id, ep.status AS employment_status, ep.job_title,
+                    ep.proof_image_path, ep.proof_image_url
              FROM graduates g
              JOIN programs p ON p.id = g.program_id
              JOIN batches b ON b.id = g.batch_id

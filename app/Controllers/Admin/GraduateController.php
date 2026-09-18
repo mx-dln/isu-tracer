@@ -184,13 +184,19 @@ class GraduateController extends Controller
 
         $header = [
             'Student Number', 'Last Name', 'First Name', 'Middle Name', 'Suffix', 'Email',
-            'Contact Number', 'Sex', 'Program', 'Batch Year', 'Employment Status', 'Validated',
+            'Contact Number', 'Sex', 'Program', 'Batch Year', 'Employment Status', 'Proof Image Link',
+            'Uploaded Proof Image', 'Validated',
         ];
         $data = array_map(static function ($g) {
+            $uploadedProofUrl = !empty($g['proof_image_path']) && !empty($g['employment_profile_id'])
+                ? url('admin/employment/' . (int) $g['employment_profile_id'] . '/proof')
+                : '';
+
             return [
                 $g['student_number'], $g['last_name'], $g['first_name'], $g['middle_name'] ?? '', $g['suffix'] ?? '',
                 $g['email'] ?? '', $g['contact_number'] ?? '', $g['sex'] ?? '', $g['program_code'],
-                $g['batch_year'], $g['employment_status'] ?? '', $g['is_validated'] ? 'Yes' : 'No',
+                $g['batch_year'], $g['employment_status'] ?? '', $g['proof_image_url'] ?? '',
+                $uploadedProofUrl, $g['is_validated'] ? 'Yes' : 'No',
             ];
         }, $rows);
 
@@ -219,7 +225,10 @@ class GraduateController extends Controller
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->fromArray(array_merge([$header], $rows), null, 'A1');
-        $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:' . $sheet->getHighestColumn() . '1')->getFont()->setBold(true);
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="iat-graduates-' . date('Y-m-d') . '.xlsx"');
