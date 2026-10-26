@@ -19,7 +19,7 @@ $selectedBatch = (int) old('batch_id', $g['batch_id'] ?? 0);
         <div>
             <h3 class="font-semibold text-ink-800 mb-1">Academic Information</h3>
             <p class="text-xs text-ink-500 mb-4">Program, cohort and student identification.</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="label" for="student_number">Student Number <span class="text-red-600">*</span></label>
                     <input type="text" name="student_number" id="student_number" class="input" required
@@ -27,11 +27,19 @@ $selectedBatch = (int) old('batch_id', $g['batch_id'] ?? 0);
                 </div>
                 <div>
                     <label class="label" for="program_id">Program <span class="text-red-600">*</span></label>
-                    <select name="program_id" id="program_id" class="input" required>
+                    <select name="program_id" id="program_id" class="input" required onchange="toggleMajorField()">
                         <option value="">-- Select program --</option>
                         <?php foreach ($programs as $p): ?>
-                            <option value="<?= (int) $p['id'] ?>" <?= $selectedProgram === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['code']) ?> &mdash; <?= e($p['name']) ?></option>
+                            <option value="<?= (int) $p['id'] ?>" data-code="<?= e($p['code']) ?>" <?= $selectedProgram === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['code']) ?> &mdash; <?= e($p['name']) ?></option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div id="major-container">
+                    <label class="label" for="major">Major <span id="major-required" class="text-red-600">*</span></label>
+                    <select name="major" id="major" class="input">
+                        <option value="">-- Select major --</option>
+                        <option value="Animal Production" <?= old('major', $g['major'] ?? '') === 'Animal Production' ? 'selected' : '' ?>>Major in Animal Production</option>
+                        <option value="Crop Production" <?= old('major', $g['major'] ?? '') === 'Crop Production' ? 'selected' : '' ?>>Major in Crop Production</option>
                     </select>
                 </div>
                 <div>
@@ -143,3 +151,26 @@ $selectedBatch = (int) old('batch_id', $g['batch_id'] ?? 0);
         </div>
     </form>
 </div>
+<script>
+function toggleMajorField() {
+    var prog = document.getElementById('program_id');
+    var selectedOpt = prog ? prog.options[prog.selectedIndex] : null;
+    var code = selectedOpt ? selectedOpt.getAttribute('data-code') : '';
+    var container = document.getElementById('major-container');
+    var majorSelect = document.getElementById('major');
+    if (!container || !majorSelect) return;
+    if (code === 'BAT') {
+        container.style.display = 'block';
+        majorSelect.required = true;
+    } else {
+        container.style.display = 'none';
+        majorSelect.required = false;
+        majorSelect.value = '';
+    }
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', toggleMajorField);
+} else {
+    toggleMajorField();
+}
+</script>

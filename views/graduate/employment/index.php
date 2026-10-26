@@ -121,6 +121,10 @@ $typeLabel = [
                         <?php if (!empty($profile['proof_image_path'])): ?>
                             <span>Uploaded image is on file.</span>
                         <?php endif; ?>
+                        <?php if (!empty($profile['proof_uploaded_at'])): ?>
+                            <span class="text-ink-400">&middot;</span>
+                            <span>Date Uploaded: <strong class="text-ink-800"><?= date('M j, Y g:i A', strtotime($profile['proof_uploaded_at'])) ?></strong></span>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>

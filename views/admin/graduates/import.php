@@ -49,7 +49,8 @@
                             'email'          => ['No', 'Optional contact email'],
                             'contact_number' => ['No', ''],
                             'sex'            => ['No', 'Male / Female'],
-                            'program_code'   => ['Yes', 'Must match an existing program code'],
+                            'program_code'   => ['Yes', 'Must match BAT or DAT'],
+                            'major'          => ['No', 'For BAT: Animal Production or Crop Production. Blank for DAT.'],
                             'batch_year'     => ['Yes', 'Must match an existing batch year'],
                         ];
                         ?>

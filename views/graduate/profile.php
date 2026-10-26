@@ -20,7 +20,12 @@ $old = $old ?? [];
             </div>
             <div>
                 <p class="text-xs text-ink-500">Program</p>
-                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['program_code'] ?? ($graduate['program_name'] ?? '—')) ?></p>
+                <p class="text-sm font-semibold text-ink-900">
+                    <?= e($graduate['program_code'] ?? ($graduate['program_name'] ?? '—')) ?>
+                    <?php if (!empty($graduate['major'])): ?>
+                        <span class="block text-xs font-normal text-ink-500">Major: <?= e($graduate['major']) ?></span>
+                    <?php endif; ?>
+                </p>
             </div>
             <div>
                 <p class="text-xs text-ink-500">Graduation Year</p>

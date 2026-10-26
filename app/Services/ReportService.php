@@ -71,9 +71,10 @@ final class ReportService
 
         $rows = Database::fetchAll(
             'SELECT g.student_number, g.last_name, g.first_name, g.middle_name, g.suffix,
-                    g.email, g.contact_number, g.sex, g.graduation_year,
+                    g.email, g.contact_number, g.sex, g.graduation_year, g.major,
                     p.code AS program, b.year AS batch,
                     ep.status AS employment_status, ep.job_title, ep.employer,
+                    ep.proof_uploaded_at,
                     es.name AS sector
              FROM graduates g
              JOIN programs p ON p.id = g.program_id
@@ -88,7 +89,23 @@ final class ReportService
         return [
             'title'  => 'Graduate Roster',
             'subtitle' => 'ISU-Cauayan IAT graduates and their employment status',
-            'headers' => ['Student #', 'Name', 'Email', 'Contact', 'Sex', 'Program', 'Batch', 'Grad Year', 'Status', 'Job Title', 'Employer', 'Sector'],
+            // Printable PDF columns (essential, readable, no overflow):
+            'pdf_headers' => ['Student #', 'Name', 'Program', 'Major', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector'],
+            'pdf_columns' => function (array $r): array {
+                return [
+                    $r['student_number'],
+                    trim(($r['last_name'] ?? '') . ', ' . ($r['first_name'] ?? '') . ' ' . ($r['middle_name'] ? mb_substr($r['middle_name'], 0, 1) . '.' : '')),
+                    $r['program'],
+                    $r['major'] ?? '—',
+                    $r['batch'],
+                    ucwords(str_replace('_', ' ', (string) ($r['employment_status'] ?? 'no_profile'))),
+                    $r['job_title'] ?? '—',
+                    $r['employer'] ?? '—',
+                    $r['sector'] ?? '—',
+                ];
+            },
+            // Full headers & columns for Excel / CSV raw export:
+            'headers' => ['Student #', 'Name', 'Email', 'Contact', 'Sex', 'Program', 'Major', 'Batch', 'Grad Year', 'Status', 'Job Title', 'Employer', 'Sector', 'Proof Date'],
             'columns' => function (array $r): array {
                 return [
                     $r['student_number'],
@@ -97,12 +114,14 @@ final class ReportService
                     $r['contact_number'] ?? '',
                     $r['sex'] ?? '',
                     $r['program'],
+                    $r['major'] ?? '—',
                     $r['batch'],
                     $r['graduation_year'],
                     ucwords(str_replace('_', ' ', (string) ($r['employment_status'] ?? 'no_profile'))),
                     $r['job_title'] ?? '',
                     $r['employer'] ?? '',
                     $r['sector'] ?? '',
+                    !empty($r['proof_uploaded_at']) ? date('Y-m-d', strtotime($r['proof_uploaded_at'])) : '—',
                 ];
             },
             'rows' => $rows,
@@ -210,6 +229,21 @@ final class ReportService
                         $row['first_employment_date'] ?? '',
                         $row['first_job_months'] !== null ? (int) $row['first_job_months'] : '',
                         $row['has_proof'],
+                    ];
+                }, $detailRows),
+            ],
+            'pdf_details' => [
+                'headers' => ['Student #', 'Name', 'Program', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector'],
+                'rows' => array_map(static function (array $row) use ($labels): array {
+                    return [
+                        $row['student_number'],
+                        trim(($row['last_name'] ?? '') . ', ' . ($row['first_name'] ?? '')),
+                        $row['program'],
+                        $row['batch'],
+                        $labels[$row['status']] ?? ucwords(str_replace('_', ' ', (string) $row['status'])),
+                        $row['job_title'] ?? '—',
+                        $row['employer'] ?? '—',
+                        $row['sector'] ?? '—',
                     ];
                 }, $detailRows),
             ],
@@ -443,13 +477,19 @@ final class ReportService
     }
 
     /**
-     * Minimal HTML template for PDF export.
+     * Formal HTML template with dual-logo institutional letterhead for PDF export.
      */
     private function renderHtml(array $dataset): string
     {
         $appName = (string) setting('university_name', 'Isabela State University');
         $campus = (string) setting('campus_name', 'Cauayan Campus');
-        $institute = (string) setting('institute_name', 'Institute of Agricultural Technology (IAT)');
+        $institute = (string) setting('institute_name', 'Institute of Agricultural Technology');
+
+        $isuLogoPath = base_path('public/assets/images/logo.png');
+        $iatLogoPath = base_path('public/assets/images/iat-logo.png');
+
+        $isuLogoData = is_file($isuLogoPath) ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($isuLogoPath)) : '';
+        $iatLogoData = is_file($iatLogoPath) ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($iatLogoPath)) : '';
 
         $title = htmlspecialchars($dataset['title'], ENT_QUOTES);
         $subtitle = htmlspecialchars($dataset['subtitle'] ?? '', ENT_QUOTES);
@@ -459,22 +499,23 @@ final class ReportService
 
         // KPI cards for analytics report.
         if (!empty($dataset['kpis'])) {
-            $body .= '<h3>Key Performance Indicators</h3><table>';
+            $body .= '<h3>Key Performance Indicators</h3><table class="data-table"><thead><tr><th style="width: 70%;">Indicator</th><th style="width: 30%;">Value</th></tr></thead><tbody>';
             foreach ($dataset['kpis'] as $label => $value) {
                 $body .= '<tr><td>' . htmlspecialchars((string) $label) . '</td><td><strong>' . htmlspecialchars((string) $value) . '</strong></td></tr>';
             }
-            $body .= '</table>';
+            $body .= '</tbody></table>';
         }
 
         // Tabular sections.
         foreach (['status' => 'Employment Status', 'sectors' => 'Employment Sectors', 'time_to_first_job' => 'Time to First Job', 'details' => 'Employment Details'] as $key => $sectionTitle) {
-            if (!empty($dataset[$key]['rows'])) {
-                $body .= '<h3>' . $sectionTitle . '</h3><table><thead><tr>';
-                foreach ($dataset[$key]['headers'] as $h) {
+            $section = ($key === 'details' && isset($dataset['pdf_details'])) ? $dataset['pdf_details'] : ($dataset[$key] ?? null);
+            if (!empty($section['rows'])) {
+                $body .= '<h3>' . $sectionTitle . '</h3><table class="data-table"><thead><tr>';
+                foreach ($section['headers'] as $h) {
                     $body .= '<th>' . htmlspecialchars((string) $h) . '</th>';
                 }
                 $body .= '</tr></thead><tbody>';
-                foreach ($dataset[$key]['rows'] as $row) {
+                foreach ($section['rows'] as $row) {
                     $body .= '<tr>';
                     foreach (array_values($row) as $v) {
                         $body .= '<td>' . htmlspecialchars((string) $v) . '</td>';
@@ -487,14 +528,16 @@ final class ReportService
 
         // Generic tabular dataset.
         if (isset($dataset['headers'], $dataset['columns'], $dataset['rows'])) {
-            $body .= '<table><thead><tr>';
-            foreach ($dataset['headers'] as $h) {
+            $headers = $dataset['pdf_headers'] ?? $dataset['headers'];
+            $colFn = $dataset['pdf_columns'] ?? $dataset['columns'];
+            $body .= '<table class="data-table"><thead><tr>';
+            foreach ($headers as $h) {
                 $body .= '<th>' . htmlspecialchars((string) $h) . '</th>';
             }
             $body .= '</tr></thead><tbody>';
             foreach ($dataset['rows'] as $row) {
                 $body .= '<tr>';
-                foreach ($dataset['columns']($row) as $v) {
+                foreach ($colFn($row) as $v) {
                     $body .= '<td>' . htmlspecialchars((string) $v) . '</td>';
                 }
                 $body .= '</tr>';
@@ -504,7 +547,7 @@ final class ReportService
 
         // Competency / curriculum single-table datasets.
         if (isset($dataset['headers'], $dataset['rows']) && !isset($dataset['columns'])) {
-            $body .= '<table><thead><tr>';
+            $body .= '<table class="data-table"><thead><tr>';
             foreach ($dataset['headers'] as $h) {
                 $body .= '<th>' . htmlspecialchars((string) $h) . '</th>';
             }
@@ -520,20 +563,46 @@ final class ReportService
         }
 
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-            body { font-family: "DejaVu Sans", sans-serif; font-size: 9pt; color: #1f2937; }
-            h1 { font-size: 15pt; margin: 0 0 2px 0; }
-            h2 { font-size: 11pt; font-weight: normal; color: #6b7280; margin: 0 0 12px 0; }
-            h3 { font-size: 10pt; margin: 16px 0 6px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-            th, td { border: 1px solid #d1d5db; padding: 3px 6px; text-align: left; }
-            th { background: #f3f4f6; }
-            .meta { font-size: 8pt; color: #6b7280; margin-bottom: 10px; }
+            @page { margin: 10mm 12mm 12mm 12mm; }
+            body { font-family: "DejaVu Sans", sans-serif; font-size: 8pt; color: #1f2937; line-height: 1.3; }
+            .header-table { width: 100%; border-collapse: collapse; border: none; margin-bottom: 0; }
+            .header-table td { border: none; padding: 0; vertical-align: middle; }
+            .letterhead-rule { border-bottom: 3px double #15803d; margin: 8px 0 12px 0; }
+            .report-title-block { text-align: center; margin-bottom: 12px; }
+            .report-title-block h1 { font-size: 13pt; font-weight: bold; color: #111827; margin: 0 0 3px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .report-title-block h2 { font-size: 8.5pt; font-weight: normal; color: #4b5563; margin: 0 0 2px 0; }
+            .report-title-block .meta { font-size: 7.5pt; color: #6b7280; }
+            h3 { font-size: 9.5pt; color: #166534; margin: 14px 0 6px 0; border-bottom: 1.5px solid #15803d; padding-bottom: 3px; font-weight: bold; }
+            table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }
+            table.data-table th, table.data-table td { border: 1px solid #cbd5e1; padding: 5px 6px; text-align: left; font-size: 7.5pt; word-wrap: break-word; }
+            table.data-table th { background-color: #15803d; color: #ffffff; font-weight: bold; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.3px; }
+            table.data-table tr:nth-child(even) td { background-color: #f8fafc; }
         </style></head><body>
-            <h1>' . htmlspecialchars($appName) . '</h1>
-            <h2>' . htmlspecialchars($campus . ' &middot; ' . $institute) . '</h2>
-            <h1>' . $title . '</h1>
-            <h2>' . $subtitle . '</h2>
-            <div class="meta">Generated on ' . $generated . '</div>
+            <table class="header-table">
+                <tr>
+                    <td style="width: 85px; text-align: center; vertical-align: middle;">
+                        ' . ($isuLogoData !== '' ? '<img src="' . $isuLogoData . '" style="width: 72px; height: 72px;">' : '') . '
+                    </td>
+                    <td style="text-align: center; padding: 0 10px; vertical-align: middle;">
+                        <div style="font-size: 8.5pt; text-transform: uppercase; color: #4b5563; letter-spacing: 0.5px;">Republic of the Philippines</div>
+                        <div style="font-size: 13pt; font-weight: bold; color: #15803d; letter-spacing: 0.5px; margin: 2px 0;">' . htmlspecialchars($appName) . '</div>
+                        <div style="font-size: 9.5pt; font-weight: bold; color: #1f2937;">' . htmlspecialchars($campus) . '</div>
+                        <div style="font-size: 9pt; font-weight: bold; color: #166534; text-transform: uppercase; margin-top: 2px;">' . htmlspecialchars($institute) . '</div>
+                        <div style="font-size: 7.5pt; color: #6b7280; font-style: italic; margin-top: 2px;">Cauayan City, Isabela</div>
+                    </td>
+                    <td style="width: 85px; text-align: center; vertical-align: middle;">
+                        ' . ($iatLogoData !== '' ? '<img src="' . $iatLogoData . '" style="width: 72px; height: 72px;">' : '') . '
+                    </td>
+                </tr>
+            </table>
+            <div class="letterhead-rule"></div>
+
+            <div class="report-title-block">
+                <h1>' . $title . '</h1>
+                ' . ($subtitle !== '' ? '<h2>' . $subtitle . '</h2>' : '') . '
+                <div class="meta">Date Generated: ' . $generated . '</div>
+            </div>
+
             ' . $body . '
         </body></html>';
     }

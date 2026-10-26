@@ -51,6 +51,10 @@ final class Graduate
             $where .= ' AND g.program_id = ?';
             $params[] = (int) $filters['program_id'];
         }
+        if (!empty($filters['major'])) {
+            $where .= ' AND g.major = ?';
+            $params[] = $filters['major'];
+        }
         if (!empty($filters['batch_id'])) {
             $where .= ' AND g.batch_id = ?';
             $params[] = (int) $filters['batch_id'];
@@ -83,11 +87,11 @@ final class Graduate
         $items = Database::fetchAll(
             "SELECT g.id, g.student_number, g.first_name, g.middle_name, g.last_name, g.suffix,
                     g.email, g.contact_number, g.sex, g.is_validated, g.is_demo,
-                    g.program_id, g.batch_id, g.graduation_year,
+                    g.program_id, g.major, g.batch_id, g.graduation_year,
                     p.code AS program_code, p.name AS program_name,
                     b.year AS batch_year,
                     ep.id AS employment_profile_id, ep.status AS employment_status, ep.job_title,
-                    ep.proof_image_path, ep.proof_image_url
+                    ep.proof_image_path, ep.proof_image_url, ep.proof_uploaded_at
              FROM graduates g
              JOIN programs p ON p.id = g.program_id
              JOIN batches b ON b.id = g.batch_id
@@ -148,8 +152,8 @@ final class Graduate
             'INSERT INTO graduates
                 (student_number, first_name, middle_name, last_name, suffix, email, contact_number,
                  sex, birth_date, civil_status, address, municipality, province,
-                 program_id, batch_id, graduation_year, is_validated, is_demo)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
+                 program_id, major, batch_id, graduation_year, is_validated, is_demo)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
             [
                 $data['student_number'],
                 $data['first_name'],
@@ -165,6 +169,7 @@ final class Graduate
                 $data['municipality'] ?? null,
                 $data['province'] ?? null,
                 $data['program_id'],
+                $data['major'] ?? null,
                 $data['batch_id'],
                 $data['graduation_year'] ?? null,
                 isset($data['is_validated']) ? 1 : 0,
@@ -180,7 +185,7 @@ final class Graduate
                 student_number = ?, first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                 email = ?, contact_number = ?, sex = ?, birth_date = ?, civil_status = ?,
                 address = ?, municipality = ?, province = ?,
-                program_id = ?, batch_id = ?, graduation_year = ?, is_validated = ?
+                program_id = ?, major = ?, batch_id = ?, graduation_year = ?, is_validated = ?
              WHERE id = ?',
             [
                 $data['student_number'],
@@ -197,6 +202,7 @@ final class Graduate
                 $data['municipality'] ?? null,
                 $data['province'] ?? null,
                 $data['program_id'],
+                $data['major'] ?? null,
                 $data['batch_id'],
                 $data['graduation_year'] ?? null,
                 isset($data['is_validated']) ? 1 : 0,
@@ -234,6 +240,11 @@ final class Graduate
             return null;
         }
 
+        $major = trim((string) ($row['major'] ?? ''));
+        if ($major === '' || strcasecmp($major, 'n/a') === 0 || strcasecmp($major, 'none') === 0) {
+            $major = null;
+        }
+
         return [
             'student_number'  => $studentNumber,
             'first_name'      => $first,
@@ -245,6 +256,7 @@ final class Graduate
             'sex'             => in_array(strtolower((string) ($row['sex'] ?? '')), ['m', 'male'], true) ? 'Male'
                                : (in_array(strtolower((string) ($row['sex'] ?? '')), ['f', 'female'], true) ? 'Female' : null),
             'program_id'      => $programId,
+            'major'           => $major,
             'batch_id'        => $batchId,
             'graduation_year' => $batchYear ?: null,
             'is_validated'    => 0,

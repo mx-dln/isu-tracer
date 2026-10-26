@@ -156,6 +156,12 @@ $typeLabel = [
                     <?php endif; ?>
                     <div class="min-w-0">
                         <p class="text-sm font-medium text-ink-900">Graduate submitted proof for this employment profile.</p>
+                        <?php if (!empty($p['proof_uploaded_at'])): ?>
+                            <p class="text-xs text-ink-500 mt-1.5 flex items-center gap-1.5">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-600"></i>
+                                <span>Date Uploaded: <strong class="text-ink-800"><?= date('F j, Y g:i A', strtotime($p['proof_uploaded_at'])) ?></strong></span>
+                            </p>
+                        <?php endif; ?>
                         <div class="mt-3 flex flex-wrap gap-2">
                             <?php if (!empty($p['proof_image_path'])): ?>
                                 <button type="button" class="btn-secondary h-9" data-proof-zoom="<?= e($proofUrl) ?>" data-proof-title="Proof of employment">

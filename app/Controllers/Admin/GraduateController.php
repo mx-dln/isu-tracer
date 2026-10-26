@@ -23,6 +23,7 @@ class GraduateController extends Controller
         $filters = [
             'search'     => trim((string) $request->query('search')),
             'program_id' => $request->query('program_id') !== null && $request->query('program_id') !== '' ? (int) $request->query('program_id') : null,
+            'major'      => trim((string) $request->query('major')),
             'batch_id'   => $request->query('batch_id') !== null && $request->query('batch_id') !== '' ? (int) $request->query('batch_id') : null,
             'validated'  => $request->query('validated') !== null && $request->query('validated') !== '' ? (int) $request->query('validated') : null,
             'status'     => trim((string) $request->query('status')),
@@ -34,6 +35,7 @@ class GraduateController extends Controller
             'subtitle'    => 'Master list of Institute of Agricultural Technology graduates',
             'graduates'   => Graduate::paginate(array_filter($filters, fn ($v) => $v !== null && $v !== ''), $page, 15),
             'programs'    => Program::all(true),
+            'majors'      => ['Animal Production', 'Crop Production'],
             'batches'     => Batch::all(true),
             'filters'     => $filters,
             'statuses'    => ['employed', 'self_employed', 'unemployed', 'further_studies'],
@@ -46,6 +48,7 @@ class GraduateController extends Controller
             'title'    => 'Add Graduate',
             'subtitle' => 'Encode a new IAT graduate record',
             'programs' => Program::all(true),
+            'majors'   => ['Animal Production', 'Crop Production'],
             'batches'  => Batch::all(true),
         ]);
     }
@@ -73,6 +76,15 @@ class GraduateController extends Controller
             ->min('graduation_year', 1950)
             ->max('graduation_year', (int) date('Y') + 1);
         $validator->validateOrFail();
+
+        $prog = Program::find((int) $data['program_id']);
+        if ($prog && $prog['code'] === 'BAT') {
+            $data['major'] = in_array($data['major'] ?? '', ['Animal Production', 'Crop Production'], true)
+                ? $data['major']
+                : (!empty($data['major']) ? trim((string) $data['major']) : 'Crop Production');
+        } else {
+            $data['major'] = null;
+        }
 
         $batch = Batch::find((int) $data['batch_id']);
         $data['graduation_year'] = !empty($data['graduation_year'])
@@ -112,6 +124,7 @@ class GraduateController extends Controller
             'subtitle' => $graduate['student_number'] . ' &middot; ' . $graduate['first_name'] . ' ' . $graduate['last_name'],
             'graduate' => $graduate,
             'programs' => Program::all(true),
+            'majors'   => ['Animal Production', 'Crop Production'],
             'batches'  => Batch::all(true),
         ]);
     }
@@ -145,6 +158,15 @@ class GraduateController extends Controller
             ->max('graduation_year', (int) date('Y') + 1);
         $validator->validateOrFail();
 
+        $prog = Program::find((int) $data['program_id']);
+        if ($prog && $prog['code'] === 'BAT') {
+            $data['major'] = in_array($data['major'] ?? '', ['Animal Production', 'Crop Production'], true)
+                ? $data['major']
+                : (!empty($data['major']) ? trim((string) $data['major']) : 'Crop Production');
+        } else {
+            $data['major'] = null;
+        }
+
         $batch = Batch::find((int) $data['batch_id']);
         $data['graduation_year'] = !empty($data['graduation_year'])
             ? (int) $data['graduation_year']
@@ -176,6 +198,7 @@ class GraduateController extends Controller
         $filters = [
             'search'     => trim((string) $request->query('search')),
             'program_id' => $request->query('program_id') !== null && $request->query('program_id') !== '' ? (int) $request->query('program_id') : null,
+            'major'      => trim((string) $request->query('major')),
             'batch_id'   => $request->query('batch_id') !== null && $request->query('batch_id') !== '' ? (int) $request->query('batch_id') : null,
             'validated'  => $request->query('validated') !== null && $request->query('validated') !== '' ? (int) $request->query('validated') : null,
             'status'     => trim((string) $request->query('status')),
@@ -184,19 +207,23 @@ class GraduateController extends Controller
 
         $header = [
             'Student Number', 'Last Name', 'First Name', 'Middle Name', 'Suffix', 'Email',
-            'Contact Number', 'Sex', 'Program', 'Batch Year', 'Employment Status', 'Proof Image Link',
-            'Uploaded Proof Image', 'Validated',
+            'Contact Number', 'Sex', 'Program', 'Major', 'Batch Year', 'Employment Status', 'Proof Image Link',
+            'Uploaded Proof Image', 'Proof Uploaded Date', 'Validated',
         ];
         $data = array_map(static function ($g) {
             $uploadedProofUrl = !empty($g['proof_image_path']) && !empty($g['employment_profile_id'])
                 ? url('admin/employment/' . (int) $g['employment_profile_id'] . '/proof')
                 : '';
+            $proofUploadedAt = !empty($g['proof_uploaded_at'])
+                ? date('Y-m-d H:i:s', strtotime((string) $g['proof_uploaded_at']))
+                : '';
 
             return [
                 $g['student_number'], $g['last_name'], $g['first_name'], $g['middle_name'] ?? '', $g['suffix'] ?? '',
                 $g['email'] ?? '', $g['contact_number'] ?? '', $g['sex'] ?? '', $g['program_code'],
+                $g['major'] ?? '',
                 $g['batch_year'], $g['employment_status'] ?? '', $g['proof_image_url'] ?? '',
-                $uploadedProofUrl, $g['is_validated'] ? 'Yes' : 'No',
+                $uploadedProofUrl, $proofUploadedAt, $g['is_validated'] ? 'Yes' : 'No',
             ];
         }, $rows);
 
@@ -314,11 +341,11 @@ class GraduateController extends Controller
     {
         $header = [
             'student_number', 'first_name', 'middle_name', 'last_name', 'suffix', 'email',
-            'contact_number', 'sex', 'program_code', 'batch_year',
+            'contact_number', 'sex', 'program_code', 'major', 'batch_year',
         ];
         $sample = [
             'IAT-2026-0001', 'Juan', 'Dela', 'Cruz', '', 'juan.delacruz@example.com',
-            '09171234567', 'Male', 'BAT', '2026',
+            '09171234567', 'Male', 'BAT', 'Animal Production', '2026',
         ];
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="graduates-import-template.csv"');

@@ -17,7 +17,7 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
                 <div>
                     <h2 class="text-xl font-bold">Welcome, <?= e(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''))) ?>!</h2>
                     <p class="text-brand-100 text-sm mt-1">
-                        <?= e($user['student_number'] ?? '') ?> &middot; <?= e($user['program_name'] ?? '') ?> &middot; Batch <?= e($user['batch_year'] ?? '') ?>
+                        <?= e($user['student_number'] ?? '') ?> &middot; <?= e($user['program_name'] ?? '') ?><?= !empty($user['major']) ? ' (' . e($user['major']) . ')' : '' ?> &middot; Batch <?= e($user['batch_year'] ?? '') ?>
                     </p>
                 </div>
                 <a href="<?= url('graduate/profile') ?>" class="btn bg-white/15 hover:bg-white/25 text-white border border-white/30">

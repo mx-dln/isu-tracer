@@ -44,7 +44,10 @@ $report = $report ?? [];
     <?php endif; ?>
 
     <div class="flex gap-2">
-        <a href="<?= url('admin/reports/' . (int) $report['id'] . '/download') ?>" class="btn-primary"><i data-lucide="download" class="w-4 h-4"></i> Download Report</a>
+        <?php if ($report['format'] === 'pdf'): ?>
+            <a href="<?= url('admin/reports/' . (int) $report['id'] . '/download?inline=1') ?>" target="_blank" class="btn-primary"><i data-lucide="printer" class="w-4 h-4"></i> Print Report</a>
+        <?php endif; ?>
+        <a href="<?= url('admin/reports/' . (int) $report['id'] . '/download') ?>" class="btn-secondary"><i data-lucide="download" class="w-4 h-4"></i> Download Report</a>
         <a href="<?= url('admin/reports') ?>" class="btn-secondary"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Reports</a>
     </div>
 </div>

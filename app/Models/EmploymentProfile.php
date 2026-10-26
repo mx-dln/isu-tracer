@@ -89,17 +89,30 @@ final class EmploymentProfile
             'job_relevance_rating'  => !empty($data['job_relevance_rating']) ? (int) $data['job_relevance_rating'] : null,
         ];
 
+        $proofUploadedAt = $current['proof_uploaded_at'] ?? null;
+        if (!empty($fields['proof_image_path']) || !empty($fields['proof_image_url'])) {
+            if (array_key_exists('proof_image_path', $data) && $normalizeText($data['proof_image_path'] ?? null) !== ($current['proof_image_path'] ?? null)) {
+                $proofUploadedAt = date('Y-m-d H:i:s');
+            } elseif (array_key_exists('proof_image_url', $data) && $normalizeText($data['proof_image_url'] ?? null) !== ($current['proof_image_url'] ?? null)) {
+                $proofUploadedAt = date('Y-m-d H:i:s');
+            } elseif (!$proofUploadedAt) {
+                $proofUploadedAt = date('Y-m-d H:i:s');
+            }
+        } else {
+            $proofUploadedAt = null;
+        }
+
         if ($current) {
             Database::run(
                 'UPDATE employment_profiles SET
                     status = ?, job_title = ?, employer = ?, sector_id = ?, sector_other = ?,
                     employment_type = ?, work_location = ?, date_hired = ?, first_employment_date = ?,
-                    salary_range = ?, job_description = ?, proof_image_path = ?, proof_image_url = ?, is_related_to_program = ?, job_relevance_rating = ?
+                    salary_range = ?, job_description = ?, proof_image_path = ?, proof_image_url = ?, proof_uploaded_at = ?, is_related_to_program = ?, job_relevance_rating = ?
                  WHERE id = ?',
                 [
                     $fields['status'], $fields['job_title'], $fields['employer'], $fields['sector_id'], $fields['sector_other'],
                     $fields['employment_type'], $fields['work_location'], $fields['date_hired'], $fields['first_employment_date'],
-                    $fields['salary_range'], $fields['job_description'], $fields['proof_image_path'], $fields['proof_image_url'],
+                    $fields['salary_range'], $fields['job_description'], $fields['proof_image_path'], $fields['proof_image_url'], $proofUploadedAt,
                     $fields['is_related_to_program'], $fields['job_relevance_rating'],
                     (int) $current['id'],
                 ]
@@ -111,12 +124,12 @@ final class EmploymentProfile
             'INSERT INTO employment_profiles
                 (graduate_id, status, job_title, employer, sector_id, sector_other, employment_type,
                  work_location, date_hired, first_employment_date, salary_range, job_description,
-                 proof_image_path, proof_image_url, is_related_to_program, job_relevance_rating, is_current, is_demo)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)',
+                 proof_image_path, proof_image_url, proof_uploaded_at, is_related_to_program, job_relevance_rating, is_current, is_demo)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)',
             [
                 $graduateId, $fields['status'], $fields['job_title'], $fields['employer'], $fields['sector_id'], $fields['sector_other'], $fields['employment_type'],
                 $fields['work_location'], $fields['date_hired'], $fields['first_employment_date'], $fields['salary_range'], $fields['job_description'],
-                $fields['proof_image_path'], $fields['proof_image_url'],
+                $fields['proof_image_path'], $fields['proof_image_url'], $proofUploadedAt,
                 $fields['is_related_to_program'], $fields['job_relevance_rating'],
             ]
         );

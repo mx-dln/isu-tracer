@@ -102,8 +102,10 @@ class ReportController extends Controller
             'csv'   => 'text/csv; charset=UTF-8',
         ][$report['format']] ?? 'application/octet-stream';
 
+        $disposition = ($report['format'] === 'pdf' && $request->query('inline') === '1') ? 'inline' : 'attachment';
+
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: attachment; filename="' . basename($report['file_path']) . '"');
+        header('Content-Disposition: ' . $disposition . '; filename="' . basename($report['file_path']) . '"');
         header('Content-Length: ' . filesize($file));
         readfile($file);
         exit;

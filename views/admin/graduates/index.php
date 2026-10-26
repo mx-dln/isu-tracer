@@ -55,6 +55,15 @@ $statusLabel = [
             </select>
         </div>
         <div>
+            <label class="label" for="f-major">Major</label>
+            <select name="major" id="f-major" class="input !w-auto">
+                <option value="">All majors</option>
+                <?php foreach (($majors ?? ['Animal Production', 'Crop Production']) as $m): ?>
+                    <option value="<?= e($m) ?>" <?= ($filters['major'] ?? '') === $m ? 'selected' : '' ?>><?= e($m) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
             <label class="label" for="f-batch">Batch</label>
             <select name="batch_id" id="f-batch" class="input !w-auto">
                 <option value="">All batches</option>
@@ -92,7 +101,7 @@ $statusLabel = [
                     <tr>
                         <th>Student No.</th>
                         <th>Name</th>
-                        <th>Program</th>
+                        <th>Program / Major</th>
                         <th>Batch</th>
                         <th>Contact</th>
                         <th>Employment</th>
@@ -112,7 +121,12 @@ $statusLabel = [
                                 <?= e($g['last_name']) ?>, <?= e($g['first_name']) ?><?= !empty($g['suffix']) ? ' ' . e($g['suffix']) : '' ?>
                             </a>
                         </td>
-                        <td><?= e($g['program_code']) ?></td>
+                        <td>
+                            <span class="font-semibold text-ink-800"><?= e($g['program_code']) ?></span>
+                            <?php if (!empty($g['major'])): ?>
+                                <p class="text-xs text-ink-500"><?= e($g['major']) ?></p>
+                            <?php endif; ?>
+                        </td>
                         <td><?= (int) $g['batch_year'] ?></td>
                         <td class="!whitespace-normal max-w-[180px]">
                             <?php if ($g['email']): ?><p class="truncate text-ink-600"><?= e($g['email']) ?></p><?php endif; ?>

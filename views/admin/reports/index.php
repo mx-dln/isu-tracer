@@ -113,6 +113,9 @@ $statusLabel = [
                         <td><?= date('M j, Y g:i A', strtotime($r['generated_at'])) ?></td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
+                                <?php if ($r['format'] === 'pdf'): ?>
+                                    <a href="<?= url('admin/reports/' . (int) $r['id'] . '/download?inline=1') ?>" target="_blank" class="btn-secondary !py-1.5 !px-3 text-xs" title="Open PDF to view and print"><i data-lucide="printer" class="w-3.5 h-3.5"></i> Print</a>
+                                <?php endif; ?>
                                 <a href="<?= url('admin/reports/' . (int) $r['id'] . '/download') ?>" class="btn-secondary !py-1.5 !px-3 text-xs"><i data-lucide="download" class="w-3.5 h-3.5"></i> Download</a>
                                 <form method="POST" action="<?= url('admin/reports/' . (int) $r['id']) ?>" onsubmit="return confirmAction('Delete this report?', this);">
                                     <?= csrf_field() ?>

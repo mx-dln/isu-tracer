@@ -28,7 +28,9 @@ $typeLabel = [
                 <h2 class="text-xl font-bold text-ink-900">
                     <?= e($g['first_name'] ?? '') ?> <?= e($g['middle_name'] ?? '') ?> <?= e($g['last_name'] ?? '') ?><?= !empty($g['suffix']) ? ' ' . e($g['suffix']) : '' ?>
                 </h2>
-                <p class="text-sm text-ink-500"><?= e($g['student_number'] ?? '') ?> &middot; <?= e($g['program_code'] ?? '') ?> &middot; Batch <?= (int) ($g['batch_year'] ?? 0) ?></p>
+                <p class="text-sm text-ink-500">
+                    <?= e($g['student_number'] ?? '') ?> &middot; <?= e($g['program_code'] ?? '') ?><?= !empty($g['major']) ? ' (' . e($g['major']) . ')' : '' ?> &middot; Batch <?= (int) ($g['batch_year'] ?? 0) ?>
+                </p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -71,6 +73,7 @@ $typeLabel = [
                     'Municipality'   => $g['municipality'] ?? null,
                     'Province'       => $g['province'] ?? null,
                     'Program'        => $g['program_name'] ?? null,
+                    'Major'          => $g['major'] ?? null,
                     'Batch'          => ($g['batch_year'] ?? null) ? (int) $g['batch_year'] : null,
                     'Graduation Year'=> $g['graduation_year'] ?? null,
                     'Recorded'       => $g['created_at'] ?? null,
