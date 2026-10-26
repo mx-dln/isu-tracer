@@ -565,7 +565,7 @@ final class ReportService
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>
             @page { margin: 10mm 12mm 12mm 12mm; }
             body { font-family: "DejaVu Sans", sans-serif; font-size: 8pt; color: #1f2937; line-height: 1.3; }
-            .header-table { width: 100%; border-collapse: collapse; border: none; margin-bottom: 0; }
+            .header-table { width: 70%; margin: 0 auto; border-collapse: collapse; border: none; margin-bottom: 0; }
             .header-table td { border: none; padding: 0; vertical-align: middle; }
             .letterhead-rule { border-bottom: 3px double #15803d; margin: 8px 0 12px 0; }
             .report-title-block { text-align: center; margin-bottom: 12px; }
@@ -578,20 +578,20 @@ final class ReportService
             table.data-table th { background-color: #15803d; color: #ffffff; font-weight: bold; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.3px; }
             table.data-table tr:nth-child(even) td { background-color: #f8fafc; }
         </style></head><body>
-            <table class="header-table">
+            <table class="header-table" align="center">
                 <tr>
-                    <td style="width: 85px; text-align: center; vertical-align: middle;">
-                        ' . ($isuLogoData !== '' ? '<img src="' . $isuLogoData . '" style="width: 72px; height: 72px;">' : '') . '
+                    <td style="width: 95px; text-align: center; vertical-align: middle;">
+                        ' . ($isuLogoData !== '' ? '<img src="' . $isuLogoData . '" style="width: 88px; height: 88px;">' : '') . '
                     </td>
-                    <td style="text-align: center; padding: 0 10px; vertical-align: middle;">
+                    <td style="text-align: center; padding: 0 15px; vertical-align: middle;">
                         <div style="font-size: 8.5pt; text-transform: uppercase; color: #4b5563; letter-spacing: 0.5px;">Republic of the Philippines</div>
-                        <div style="font-size: 13pt; font-weight: bold; color: #15803d; letter-spacing: 0.5px; margin: 2px 0;">' . htmlspecialchars($appName) . '</div>
+                        <div style="font-size: 13.5pt; font-weight: bold; color: #15803d; letter-spacing: 0.5px; margin: 2px 0;">' . htmlspecialchars($appName) . '</div>
                         <div style="font-size: 9.5pt; font-weight: bold; color: #1f2937;">' . htmlspecialchars($campus) . '</div>
                         <div style="font-size: 9pt; font-weight: bold; color: #166534; text-transform: uppercase; margin-top: 2px;">' . htmlspecialchars($institute) . '</div>
                         <div style="font-size: 7.5pt; color: #6b7280; font-style: italic; margin-top: 2px;">Cauayan City, Isabela</div>
                     </td>
-                    <td style="width: 85px; text-align: center; vertical-align: middle;">
-                        ' . ($iatLogoData !== '' ? '<img src="' . $iatLogoData . '" style="width: 72px; height: 72px;">' : '') . '
+                    <td style="width: 95px; text-align: center; vertical-align: middle;">
+                        ' . ($iatLogoData !== '' ? '<img src="' . $iatLogoData . '" style="width: 88px; height: 88px;">' : '') . '
                     </td>
                 </tr>
             </table>
