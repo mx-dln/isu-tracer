@@ -33,6 +33,7 @@ final class Database
             $pdo = new PDO($dsn, $db['username'], $db['password'], $db['options']);
             $pdo->exec(sprintf('SET NAMES %s COLLATE %s', $db['charset'], $db['collation']));
             $pdo->exec('SET time_zone = "+08:00"');
+            $pdo->exec("SET SESSION sql_mode = 'NO_ENGINE_SUBSTITUTION'");
             self::$instance = $pdo;
             return $pdo;
         } catch (\PDOException $e) {

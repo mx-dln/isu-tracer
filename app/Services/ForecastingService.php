@@ -184,18 +184,18 @@ final class ForecastingService
             // Legacy key retained for saved models.
             case 'time_to_employment':
                 $rows = Database::fetchAll(
-                    'SELECT g.graduation_year AS year,
+                    "SELECT g.graduation_year AS year,
                             AVG(TIMESTAMPDIFF(MONTH,
-                                STR_TO_DATE(CONCAT(g.graduation_year, "-06-15"), "%Y-%m-%d"),
+                                STR_TO_DATE(CONCAT(g.graduation_year, '-06-15'), '%Y-%m-%d'),
                                 ep.first_employment_date)) AS value
                      FROM employment_profiles ep
                      JOIN graduates g ON g.id = ep.graduate_id
                      WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-                       AND ep.status IN ("employed","self_employed")
-                       AND ep.first_employment_date IS NOT NULL AND ep.first_employment_date <> ""
+                       AND ep.status IN ('employed','self_employed')
+                       AND ep.first_employment_date IS NOT NULL
                        AND g.graduation_year IS NOT NULL
                      GROUP BY g.graduation_year
-                     ORDER BY g.graduation_year'
+                     ORDER BY g.graduation_year"
                 );
                 return array_map(
                     static fn ($r) => ['year' => (int) $r['year'], 'value' => round((float) $r['value'], 1)],
@@ -223,13 +223,13 @@ final class ForecastingService
     private function waitingByYear(): array
     {
         $rows = Database::fetchAll(
-            'SELECT g.graduation_year AS year, ep.first_employment_date AS first_date
+            "SELECT g.graduation_year AS year, ep.first_employment_date AS first_date
              FROM employment_profiles ep
              JOIN graduates g ON g.id = ep.graduate_id
              WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-               AND ep.status IN ("employed","self_employed")
-               AND ep.first_employment_date IS NOT NULL AND ep.first_employment_date <> ""
-               AND g.graduation_year IS NOT NULL'
+               AND ep.status IN ('employed','self_employed')
+               AND ep.first_employment_date IS NOT NULL
+               AND g.graduation_year IS NOT NULL"
         );
 
         $byYear = [];

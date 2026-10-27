@@ -190,18 +190,18 @@ final class ReportService
         }
 
         $detailRows = Database::fetchAll(
-            'SELECT g.student_number, g.last_name, g.first_name, p.code AS program, b.year AS batch,
+            "SELECT g.student_number, g.last_name, g.first_name, p.code AS program, b.year AS batch,
                     ep.status, ep.job_title, ep.employer, COALESCE(es.name, ep.sector_other) AS sector,
                     ep.first_employment_date,
-                    TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(g.graduation_year, "-06-15"), "%Y-%m-%d"), ep.first_employment_date) AS first_job_months,
-                    CASE WHEN ep.proof_image_path IS NOT NULL OR ep.proof_image_url IS NOT NULL THEN "Yes" ELSE "No" END AS has_proof
+                    TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(g.graduation_year, '-06-15'), '%Y-%m-%d'), ep.first_employment_date) AS first_job_months,
+                    CASE WHEN ep.proof_image_path IS NOT NULL OR ep.proof_image_url IS NOT NULL THEN 'Yes' ELSE 'No' END AS has_proof
              FROM employment_profiles ep
              JOIN graduates g ON g.id = ep.graduate_id
              JOIN programs p ON p.id = g.program_id
              JOIN batches b ON b.id = g.batch_id
              LEFT JOIN employment_sectors es ON es.id = ep.sector_id
-             WHERE ' . implode(' AND ', $where) . '
-             ORDER BY g.last_name, g.first_name',
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY g.last_name, g.first_name",
             $params
         );
 

@@ -92,7 +92,7 @@ final class AnalyticsService
                  FROM employment_profiles ep
                  JOIN graduates g ON g.id = ep.graduate_id
                  WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-                   AND ep.status IN ("employed","self_employed") AND ep.job_relevance_rating >= 3'
+                   AND ep.status IN ('employed','self_employed') AND ep.job_relevance_rating >= 3'
                     . $filterSql,
                 $params
             )['c'];
@@ -162,15 +162,14 @@ final class AnalyticsService
     {
         [$filterSql, $params] = $this->filterSql($filters);
         $row = Database::fetch(
-            'SELECT AVG(TIMESTAMPDIFF(MONTH,
-                       STR_TO_DATE(CONCAT(g.graduation_year, "-06-15"), "%Y-%m-%d"),
+            "SELECT AVG(TIMESTAMPDIFF(MONTH,
+                       STR_TO_DATE(CONCAT(g.graduation_year, '-06-15'), '%Y-%m-%d'),
                        ep.first_employment_date)) AS avg_months
              FROM graduates g
              JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.deleted_at IS NULL AND ep.is_current = 1
              WHERE g.deleted_at IS NULL
                AND ep.first_employment_date IS NOT NULL
-               AND ep.first_employment_date <> ""
-               AND ep.status IN ("employed","self_employed")' . $filterSql,
+               AND ep.status IN ('employed','self_employed')" . $filterSql,
             $params
         );
 
@@ -185,14 +184,13 @@ final class AnalyticsService
     {
         [$filterSql, $params] = $this->filterSql($filters);
         $rows = Database::fetchAll(
-            'SELECT g.graduation_year, ep.first_employment_date,
-                    TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(g.graduation_year, "-06-15"), "%Y-%m-%d"), ep.first_employment_date) AS months
+            "SELECT g.graduation_year, ep.first_employment_date,
+                    TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(g.graduation_year, '-06-15'), '%Y-%m-%d'), ep.first_employment_date) AS months
              FROM graduates g
              JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.deleted_at IS NULL AND ep.is_current = 1
              WHERE g.deleted_at IS NULL
                AND ep.first_employment_date IS NOT NULL
-               AND ep.first_employment_date <> ""
-               AND ep.status IN ("employed","self_employed")' . $filterSql,
+               AND ep.status IN ('employed','self_employed')" . $filterSql,
             $params
         );
 
@@ -237,7 +235,7 @@ final class AnalyticsService
              JOIN employment_sectors es ON es.id = ep.sector_id
              JOIN graduates g ON g.id = ep.graduate_id
              WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-               AND ep.status IN ("employed","self_employed")' . $filterSql . '
+                AND ep.status IN ('employed','self_employed')' . $filterSql . '
              GROUP BY es.name
              ORDER BY c DESC',
             $params
@@ -261,7 +259,7 @@ final class AnalyticsService
         $rows = Database::fetchAll(
             'SELECT g.graduation_year AS year,
                     COUNT(DISTINCT g.id) AS respondents,
-                    SUM(CASE WHEN ep.status IN ("employed","self_employed") THEN 1 ELSE 0 END) AS employed
+                    SUM(CASE WHEN ep.status IN (\'employed\',\'self_employed\') THEN 1 ELSE 0 END) AS employed
              FROM graduates g
              JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.deleted_at IS NULL AND ep.is_current = 1
              WHERE g.deleted_at IS NULL AND g.graduation_year IS NOT NULL
@@ -290,7 +288,7 @@ final class AnalyticsService
              FROM employment_profiles ep
              JOIN graduates g ON g.id = ep.graduate_id
              WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-               AND ep.status IN ("employed","self_employed")
+               AND ep.status IN (\'employed\',\'self_employed\')
                AND ep.job_relevance_rating IS NOT NULL'
                 . $filterSql . '
              GROUP BY ep.job_relevance_rating
