@@ -38,48 +38,5 @@ $maxAttempts = (int) config('app.security.login_max_attempts', 5);
             New IAT graduate?
             <a href="<?= url('register') ?>" class="text-brand-700 hover:text-brand-800 font-semibold">Create an account</a>
         </p>
-
-        <div class="mt-6 rounded-lg bg-ink-50 border border-ink-200 px-4 py-3">
-            <p class="text-xs font-semibold text-ink-600 mb-2">Development credentials — quick login</p>
-            <div class="grid grid-cols-1 gap-2">
-                <button type="button" data-quick-login data-email="admin@example.com" data-password="Admin@12345"
-                        class="flex items-center justify-between gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-left text-xs hover:border-brand-400 hover:bg-brand-50 transition">
-                    <span class="flex items-center gap-2">
-                        <i data-lucide="shield" class="w-4 h-4 text-brand-600"></i>
-                        <span>
-                            <span class="font-semibold text-ink-800 block">Admin</span>
-                            <span class="text-ink-500">admin@example.com</span>
-                        </span>
-                    </span>
-                    <i data-lucide="log-in" class="w-4 h-4 text-ink-400"></i>
-                </button>
-                <button type="button" data-quick-login data-email="test.graduate@example.com" data-password="Graduate@12345"
-                        class="flex items-center justify-between gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-left text-xs hover:border-brand-400 hover:bg-brand-50 transition">
-                    <span class="flex items-center gap-2">
-                        <i data-lucide="graduation-cap" class="w-4 h-4 text-ink-500"></i>
-                        <span>
-                            <span class="font-semibold text-ink-800 block">Demo Graduate</span>
-                            <span class="text-ink-500">test.graduate@example.com</span>
-                        </span>
-                    </span>
-                    <i data-lucide="log-in" class="w-4 h-4 text-ink-400"></i>
-                </button>
-            </div>
-            <p class="mt-2 text-[11px] text-ink-400">All demo graduates use password <code>Graduate@12345</code></p>
-        </div>
     <?php endif; ?>
-
-    <script>
-        (function () {
-            const form = document.querySelector('form[action*="login"]');
-            if (!form) return;
-            document.querySelectorAll('[data-quick-login]').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    form.querySelector('#email').value = btn.dataset.email;
-                    form.querySelector('#password').value = btn.dataset.password;
-                    form.submit();
-                });
-            });
-        })();
-    </script>
 </div>
