@@ -1,11 +1,13 @@
-# ISU Tracer - shared hosting (InfinityFree)
-# Serves the app from the public/ subfolder without changing the document root.
-# Upload the FULL project into htdocs/, keep this file at htdocs/.htaccess.
-
+# ============================================================
+# ISU-Cauayan IAT Tracer Study - Root Directory Handler
+# ============================================================
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Already inside /public - let public/.htaccess handle it.
+    # Block direct web access to sensitive files
+    RewriteRule ^(\.env|\.git|storage/logs|.*\.sql) - [F,L,NC]
+
+    # Forward all web requests to public/ subfolder
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
