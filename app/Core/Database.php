@@ -37,7 +37,10 @@ final class Database
             return $pdo;
         } catch (\PDOException $e) {
             Logger::error('Database connection failed: ' . $e->getMessage());
-            throw new RuntimeException('Unable to connect to the database. Please check your configuration.', 500, $e);
+            $message = config('app.debug')
+                ? 'Unable to connect to the database: ' . $e->getMessage()
+                : 'Unable to connect to the database. Please check your configuration.';
+            throw new RuntimeException($message, 500, $e);
         }
     }
 
