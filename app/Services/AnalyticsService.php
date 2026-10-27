@@ -69,20 +69,25 @@ final class AnalyticsService
         $totalGraduatesSql .= ' WHERE g.deleted_at IS NULL' . $filterSql;
         $totalGraduates = (int) Database::fetch($totalGraduatesSql, $params)['c'];
 
-        // Respondents: graduates with a current employment profile.
-        $respondentWhere = ' WHERE g.deleted_at IS NULL AND ep.id IS NOT NULL AND ep.is_current = 1' . $filterSql;
-        $totalRespondents = (int) Database::fetch(
-            'SELECT COUNT(DISTINCT g.id) AS c
-             FROM graduates g
-             LEFT JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.deleted_at IS NULL' . $respondentWhere,
-            $params
-        )['c'];
+        // Respondents: count based on answered surveys (survey_responses with status = 'submitted')
+        $respondentsSql = 'SELECT COUNT(DISTINCT r.graduate_id) AS c
+                           FROM survey_responses r
+                           JOIN graduates g ON g.id = r.graduate_id';
+        if ($needsEp) {
+            $respondentsSql .= ' JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.deleted_at IS NULL AND ep.is_current = 1';
+        }
+        $respondentsSql .= ' WHERE g.deleted_at IS NULL AND r.status = \'submitted\'' . $filterSql;
+        $totalRespondents = (int) Database::fetch($respondentsSql, $params)['c'];
 
         $statusCounts = $this->statusCounts($filters);
         $employedCount = $statusCounts['employed'] + $statusCounts['self_employed'];
+        $totalProfiles = array_sum($statusCounts);
 
         $responseRate = $totalGraduates > 0 ? round($totalRespondents / $totalGraduates * 100, 1) : 0;
-        $employmentRate = $totalRespondents > 0 ? round($employedCount / $totalRespondents * 100, 1) : 0;
+        
+        // Employment rate denominator: based on graduates with recorded employment profiles
+        $profileDenominator = $totalProfiles > 0 ? $totalProfiles : $totalRespondents;
+        $employmentRate = $profileDenominator > 0 ? round($employedCount / $profileDenominator * 100, 1) : 0;
 
         // Job relevance rate: % of employed respondents with rating >= 3.
         $jobRelevanceRate = 0;
@@ -108,9 +113,9 @@ final class AnalyticsService
             'self_employed'       => $statusCounts['self_employed'],
             'unemployed'          => $statusCounts['unemployed'],
             'further_studies'     => $statusCounts['further_studies'],
-            'self_employment_rate' => $totalRespondents > 0 ? round($statusCounts['self_employed'] / $totalRespondents * 100, 1) : 0,
-            'unemployment_rate'   => $totalRespondents > 0 ? round($statusCounts['unemployed'] / $totalRespondents * 100, 1) : 0,
-            'further_studies_rate' => $totalRespondents > 0 ? round($statusCounts['further_studies'] / $totalRespondents * 100, 1) : 0,
+            'self_employment_rate' => $profileDenominator > 0 ? round($statusCounts['self_employed'] / $profileDenominator * 100, 1) : 0,
+            'unemployment_rate'   => $profileDenominator > 0 ? round($statusCounts['unemployed'] / $profileDenominator * 100, 1) : 0,
+            'further_studies_rate' => $profileDenominator > 0 ? round($statusCounts['further_studies'] / $profileDenominator * 100, 1) : 0,
             'job_relevance_rate'  => $jobRelevanceRate,
             'avg_time_to_first_employment' => $this->averageTimeToFirstEmployment($filters),
             'avg_competency_score'  => $this->averageCompetencyScore($filters),
