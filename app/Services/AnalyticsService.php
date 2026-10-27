@@ -92,7 +92,7 @@ final class AnalyticsService
                  FROM employment_profiles ep
                  JOIN graduates g ON g.id = ep.graduate_id
                  WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-                   AND ep.status IN ('employed','self_employed') AND ep.job_relevance_rating >= 3'
+                   AND ep.status IN (\'employed\',\'self_employed\') AND ep.job_relevance_rating >= 3'
                     . $filterSql,
                 $params
             )['c'];
@@ -235,7 +235,7 @@ final class AnalyticsService
              JOIN employment_sectors es ON es.id = ep.sector_id
              JOIN graduates g ON g.id = ep.graduate_id
              WHERE g.deleted_at IS NULL AND ep.deleted_at IS NULL AND ep.is_current = 1
-                AND ep.status IN ('employed','self_employed')' . $filterSql . '
+                AND ep.status IN (\'employed\',\'self_employed\')' . $filterSql . '
              GROUP BY es.name
              ORDER BY c DESC',
             $params
