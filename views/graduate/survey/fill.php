@@ -28,7 +28,7 @@ $scripts = '<script src="' . asset('js/public-survey.js') . '"></script>';
         <form method="POST" action="<?= url('graduate/survey/' . (int) $survey['id'] . '/submit') ?>" class="space-y-6" enctype="multipart/form-data">
             <?= csrf_field() ?>
             <?php foreach ($sections as $section): ?>
-                <div class="card">
+                <div class="card survey-section-card" data-section-title="<?= e(strtolower($section['title'])) ?>">
                     <div class="card-header">
                         <div>
                             <h3 class="font-semibold text-ink-800"><?= e($section['title']) ?></h3>
@@ -39,7 +39,7 @@ $scripts = '<script src="' . asset('js/public-survey.js') . '"></script>';
                     </div>
                     <div class="card-body space-y-5">
                         <?php foreach ($section['questions'] as $q): ?>
-                            <div>
+                            <div class="survey-question-item" data-question-id="<?= (int) $q['id'] ?>" data-question-key="<?= e(strtolower($q['question_key'] ?? '')) ?>">
                                 <label class="block font-medium text-ink-800 text-sm mb-1.5">
                                     <?= e($q['question_text']) ?>
                                     <?php if ($q['is_required']): ?><span class="text-red-600">*</span><?php endif; ?>
@@ -66,5 +66,78 @@ $scripts = '<script src="' . asset('js/public-survey.js') . '"></script>';
                 </div>
             </div>
         </form>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusInputs = document.querySelectorAll(
+                '[data-question-key="employment_status"] select, [data-question-key="employment_status"] input'
+            );
+
+            function isUnemployedSelected() {
+                for (const input of statusInputs) {
+                    if (input.tagName === 'SELECT') {
+                        const opt = input.options[input.selectedIndex];
+                        const text = (opt ? opt.text : '').toLowerCase();
+                        const val = (input.value || '').toLowerCase();
+                        if (val.includes('unemployed') || text.includes('unemployed')) return true;
+                        if (val !== '') return false;
+                    } else if (input.type === 'radio' && input.checked) {
+                        const label = input.closest('label')?.textContent?.toLowerCase() || '';
+                        const val = (input.value || '').toLowerCase();
+                        if (val.includes('unemployed') || label.includes('unemployed')) return true;
+                        return false;
+                    }
+                }
+                return false;
+            }
+
+            function toggleCompetencyQuestions() {
+                const unemployed = isUnemployedSelected();
+
+                // 1. Sections with "competenc" in title
+                document.querySelectorAll('.survey-section-card').forEach(function (card) {
+                    const title = (card.getAttribute('data-section-title') || '').toLowerCase();
+                    if (title.includes('competenc')) {
+                        card.style.display = unemployed ? 'none' : '';
+                        card.querySelectorAll('input, select, textarea').forEach(function (el) {
+                            if (unemployed) {
+                                if (el.hasAttribute('required')) {
+                                    el.dataset.wasRequired = '1';
+                                    el.removeAttribute('required');
+                                }
+                            } else if (el.dataset.wasRequired === '1') {
+                                el.setAttribute('required', 'required');
+                            }
+                        });
+                    }
+                });
+
+                // 2. Individual questions with "competenc" or "skills_used" in key
+                document.querySelectorAll('.survey-question-item').forEach(function (qItem) {
+                    const key = (qItem.getAttribute('data-question-key') || '').toLowerCase();
+                    if (key.includes('competenc') || key === 'skills_used') {
+                        qItem.style.display = unemployed ? 'none' : '';
+                        qItem.querySelectorAll('input, select, textarea').forEach(function (el) {
+                            if (unemployed) {
+                                if (el.hasAttribute('required')) {
+                                    el.dataset.wasRequired = '1';
+                                    el.removeAttribute('required');
+                                }
+                            } else if (el.dataset.wasRequired === '1') {
+                                el.setAttribute('required', 'required');
+                            }
+                        });
+                    }
+                });
+            }
+
+            statusInputs.forEach(function (el) {
+                el.addEventListener('change', toggleCompetencyQuestions);
+            });
+
+            // Initial check
+            toggleCompetencyQuestions();
+        });
+        </script>
     <?php endif; ?>
 </div>

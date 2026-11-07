@@ -52,6 +52,16 @@ $batches = $batches ?? [];
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="sm:col-span-2">
+                <label for="employment_status" class="label">Employment Status <span class="text-red-600">*</span></label>
+                <select id="employment_status" name="employment_status" class="input" required>
+                    <option value="unemployed" <?= old('employment_status', 'unemployed') === 'unemployed' ? 'selected' : '' ?>>Unemployed</option>
+                    <option value="employed" <?= old('employment_status') === 'employed' ? 'selected' : '' ?>>Employed</option>
+                    <option value="self_employed" <?= old('employment_status') === 'self_employed' ? 'selected' : '' ?>>Self-Employed</option>
+                    <option value="further_studies" <?= old('employment_status') === 'further_studies' ? 'selected' : '' ?>>Pursuing Further Studies</option>
+                </select>
+                <p class="text-xs text-ink-500 mt-1">If Unemployed, workplace competency assessment questions will be exempted.</p>
+            </div>
             <div>
                 <label for="password" class="label">Password <span class="text-red-600">*</span></label>
                 <input type="password" id="password" name="password" class="input" required>

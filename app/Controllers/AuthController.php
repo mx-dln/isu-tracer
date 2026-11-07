@@ -131,11 +131,12 @@ class AuthController extends Controller
         }
 
         $validator = (new Validator($data))
-            ->required('student_number', 'first_name', 'last_name', 'email', 'password', 'program_id', 'batch_id')
+            ->required('student_number', 'first_name', 'last_name', 'email', 'password', 'program_id', 'batch_id', 'employment_status')
             ->email('email')
             ->unique('email', 'users')
             ->in('program_id', $this->optionIds('programs'))
             ->in('batch_id', $this->optionIds('batches'))
+            ->in('employment_status', ['employed', 'self_employed', 'unemployed', 'further_studies'])
             ->password('password')
             ->confirmed('password');
 
@@ -186,6 +187,27 @@ class AuthController extends Controller
                      SELECT id, ?, ?, ?, ?, 1, 0 FROM roles WHERE slug = "graduate"',
                     [$graduateId, trim((string) $data['first_name']) . ' ' . trim((string) $data['last_name']), $data['email'], password_hash((string) $data['password'], PASSWORD_DEFAULT)]
                 );
+
+                // Set initial employment status in employment_profiles
+                $empStatus = in_array($data['employment_status'] ?? '', ['employed', 'self_employed', 'unemployed', 'further_studies'], true)
+                    ? $data['employment_status']
+                    : 'unemployed';
+
+                $currentProfile = Database::fetch(
+                    'SELECT id FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL LIMIT 1',
+                    [$graduateId]
+                );
+                if ($currentProfile) {
+                    Database::run(
+                        'UPDATE employment_profiles SET status = ?, updated_at = NOW() WHERE id = ?',
+                        [$empStatus, $currentProfile['id']]
+                    );
+                } else {
+                    Database::run(
+                        'INSERT INTO employment_profiles (graduate_id, status, is_current, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
+                        [$graduateId, $empStatus]
+                    );
+                }
 
                 return $graduateId;
             });

@@ -76,11 +76,13 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
         <div class="card-header"><h2 class="font-semibold text-ink-800">Tracer Study Completion</h2></div>
         <div class="card-body">
             <?php
+            $isUnemployed = ($employment['status'] ?? 'unemployed') === 'unemployed';
+            $competenciesDone = $isUnemployed || ($totalCompetencies > 0 && $competencyCount >= $totalCompetencies);
             $steps = [
                 ['label' => 'Profile', 'done' => (bool) ($user['id'] ?? false), 'link' => 'graduate/profile', 'icon' => 'user'],
                 ['label' => 'Tracer Survey', 'done' => $surveySubmitted, 'link' => 'graduate/survey', 'icon' => 'clipboard-list'],
                 ['label' => 'Employment', 'done' => (bool) $employment, 'link' => 'graduate/employment', 'icon' => 'briefcase'],
-                ['label' => 'Competencies', 'done' => $competencyCount >= $totalCompetencies, 'link' => 'graduate/competencies', 'icon' => 'award'],
+                ['label' => $isUnemployed ? 'Competencies (Exempt)' : 'Competencies', 'done' => $competenciesDone, 'link' => 'graduate/competencies', 'icon' => 'award'],
                 ['label' => 'Curriculum Feedback', 'done' => $curriculumSubmitted, 'link' => 'graduate/curriculum-feedback', 'icon' => 'book-open-check'],
             ];
             $doneCount = count(array_filter($steps, fn ($s) => $s['done']));
@@ -187,8 +189,8 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
             <p class="text-xs text-ink-500">Tracer Survey</p>
         </div>
         <div class="kpi-card">
-            <p class="text-2xl font-bold text-ink-900"><?= (int) $competencyCount ?>/<?= (int) $totalCompetencies ?></p>
-            <p class="text-xs text-ink-500">Competency Assessments</p>
+            <p class="text-2xl font-bold text-ink-900"><?= $isUnemployed ? 'Exempt' : ((int) $competencyCount . '/' . (int) $totalCompetencies) ?></p>
+            <p class="text-xs text-ink-500"><?= $isUnemployed ? 'Competencies (Unemployed)' : 'Competency Assessments' ?></p>
         </div>
         <div class="kpi-card">
             <p class="text-2xl font-bold text-ink-900"><?= $curriculumSubmitted ? 'Done' : 'Pending' ?></p>

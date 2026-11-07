@@ -27,8 +27,58 @@ final class SurveyAnswerService
     public function validate(array $structure, array $answers): array
     {
         $errors = [];
+
+        // Map section IDs to lowercase title
+        $sectionTitles = [];
+        foreach ($structure['sections'] ?? [] as $s) {
+            $sectionTitles[(int) $s['id']] = strtolower((string) ($s['title'] ?? ''));
+        }
+
+        // Determine if respondent is unemployed (via survey answer or current profile)
+        $isUnemployed = false;
+        foreach ($structure['questions'] as $q) {
+            $qk = strtolower((string) ($q['question_key'] ?? ''));
+            if ($qk === 'employment_status') {
+                $val = $answers[(int) $q['id']] ?? null;
+                $valStr = strtolower(trim(is_array($val) ? ($val[0] ?? '') : (string) $val));
+                if ($valStr === 'unemployed') {
+                    $isUnemployed = true;
+                }
+                foreach ($q['options'] ?? [] as $opt) {
+                    if ((string) $opt['option_value'] === $valStr && strtolower(trim((string) $opt['option_text'])) === 'unemployed') {
+                        $isUnemployed = true;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (!$isUnemployed && function_exists('auth') && !empty(auth()->graduate_id)) {
+            $ep = \App\Core\Database::fetch(
+                'SELECT status FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1',
+                [(int) auth()->graduate_id]
+            );
+            if (($ep['status'] ?? '') === 'unemployed') {
+                $isUnemployed = true;
+            }
+        }
+
         foreach ($structure['questions'] as $q) {
             $qid = (int) $q['id'];
+            $secTitle = $sectionTitles[(int) ($q['section_id'] ?? 0)] ?? '';
+            $qk = strtolower((string) ($q['question_key'] ?? ''));
+
+            // Check if this question is competency-related
+            $isCompetencyRelated = str_contains($secTitle, 'competenc')
+                || str_contains($qk, 'competenc')
+                || $qk === 'skills_used';
+
+            // If unemployed, competency questions are exempted from required check
+            if ($isUnemployed && $isCompetencyRelated) {
+                continue;
+            }
+
             $value = $answers[$qid] ?? null;
             $valid = SurveyQuestion::decodeValidation($q['validation'] ?? null);
             $file = $this->uploadedFile($qid);

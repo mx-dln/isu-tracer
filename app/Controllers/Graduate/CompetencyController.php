@@ -6,6 +6,7 @@ namespace App\Controllers\Graduate;
 
 use App\Controllers\Controller;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Models\Competency;
 use App\Models\CompetencyResponse;
@@ -24,14 +25,24 @@ class CompetencyController extends Controller
     public function index(Request $request): void
     {
         $graduateId = $this->graduateId();
-        $list = Competency::allForGraduate($graduateId);
+
+        $employment = Database::fetch(
+            'SELECT status FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1',
+            [$graduateId]
+        );
+        $status = $employment['status'] ?? 'unemployed';
+        $isUnemployed = ($status === 'unemployed');
+
+        $list = $isUnemployed ? [] : Competency::allForGraduate($graduateId);
 
         $this->view('graduate/competencies/index', [
-            'title'       => 'Competency Self-Assessment',
-            'subtitle'    => 'Rate your competencies developed by the IAT program (1 = very low, 5 = very high)',
-            'competencies' => $list,
-            'total'       => count($list),
-            'completed'   => Competency::completedCount($graduateId),
+            'title'            => 'Competency Self-Assessment',
+            'subtitle'         => 'Rate your competencies developed by the IAT program (1 = very low, 5 = very high)',
+            'competencies'     => $list,
+            'total'            => count($list),
+            'completed'        => Competency::completedCount($graduateId),
+            'isUnemployed'     => $isUnemployed,
+            'employmentStatus' => $status,
         ]);
     }
 
@@ -39,6 +50,16 @@ class CompetencyController extends Controller
     {
         Csrf::validateOrAbort();
         $graduateId = $this->graduateId();
+
+        $employment = Database::fetch(
+            'SELECT status FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1',
+            [$graduateId]
+        );
+        if (($employment['status'] ?? 'unemployed') === 'unemployed') {
+            flash('info', 'Competency self-assessment is exempted for unemployed graduates.');
+            redirect('graduate/competencies');
+            return;
+        }
 
         $ratings = $request->input('ratings', []);
         if (!is_array($ratings)) {
