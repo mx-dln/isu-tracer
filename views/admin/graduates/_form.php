@@ -21,9 +21,11 @@ $selectedBatch = (int) old('batch_id', $g['batch_id'] ?? 0);
             <p class="text-xs text-ink-500 mb-4">Program, cohort and student identification.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                    <label class="label" for="student_number">Student Number <span class="text-red-600">*</span></label>
-                    <input type="text" name="student_number" id="student_number" class="input" required
+                    <label class="label" for="student_number">Student ID Number <span class="text-red-600">*</span></label>
+                    <input type="text" name="student_number" id="student_number" class="input font-mono uppercase" required
+                           maxlength="50" pattern="^[A-Za-z0-9\-_]{3,50}$" placeholder="e.g. 2021-0001"
                            value="<?= e(old('student_number', $g['student_number'] ?? '')) ?>">
+                    <div id="sn-feedback" class="text-xs mt-1 min-h-[1.25rem]"></div>
                 </div>
                 <div>
                     <label class="label" for="program_id">Program <span class="text-red-600">*</span></label>
@@ -168,6 +170,63 @@ function toggleMajorField() {
         majorSelect.value = '';
     }
 }
+
+// Live student number uniqueness validation
+(function() {
+    var snInput = document.getElementById('student_number');
+    var feedback = document.getElementById('sn-feedback');
+    var submitBtn = document.querySelector('button[type="submit"]');
+    var ignoreId = <?= (int) ($g['id'] ?? 0) ?>;
+    var timer = null;
+
+    if (!snInput || !feedback) return;
+
+    function checkStudentNumber() {
+        var val = snInput.value.trim().toUpperCase();
+        snInput.value = val; // auto-uppercase & trim
+
+        if (!val) {
+            feedback.innerHTML = '';
+            snInput.classList.remove('!border-red-500', '!border-emerald-500');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
+        fetch('<?= url('admin/graduates/check-id') ?>?student_number=' + encodeURIComponent(val) + '&ignore_id=' + ignoreId)
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.available === false) {
+                    snInput.classList.add('!border-red-500');
+                    snInput.classList.remove('!border-emerald-500');
+                    feedback.innerHTML = '<span class="text-red-600 font-semibold flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5 inline"></i> ' + escapeHtml(res.message) + '</span>';
+                    if (submitBtn) submitBtn.disabled = true;
+                } else {
+                    snInput.classList.remove('!border-red-500');
+                    snInput.classList.add('!border-emerald-500');
+                    feedback.innerHTML = '<span class="text-emerald-600 font-medium flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 inline"></i> ' + escapeHtml(res.message) + '</span>';
+                    if (submitBtn) submitBtn.disabled = false;
+                }
+                if (window.lucide) window.lucide.createIcons();
+            })
+            .catch(function() {
+                if (submitBtn) submitBtn.disabled = false;
+            });
+    }
+
+    function escapeHtml(str) {
+        var p = document.createElement('p');
+        p.textContent = str || '';
+        return p.innerHTML;
+    }
+
+    snInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        timer = setTimeout(checkStudentNumber, 400);
+    });
+
+    snInput.addEventListener('blur', checkStudentNumber);
+})();
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', toggleMajorField);
 } else {

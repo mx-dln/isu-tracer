@@ -88,11 +88,52 @@ class AuthController extends Controller
         Csrf::validateOrAbort();
 
         $data = $request->all();
+
+        // Trim and sanitize input strings
+        foreach ($data as $k => $v) {
+            if (is_string($v)) {
+                $data[$k] = trim($v);
+            }
+        }
+        $data['student_number'] = strtoupper((string) ($data['student_number'] ?? ''));
+
+        // Format validation on student_number
+        if (!preg_match('/^[A-Z0-9\-_]{3,50}$/', $data['student_number'])) {
+            flash('error', 'Student Number must be 3-50 alphanumeric characters (letters, numbers, hyphens only).');
+            Session::flashOldInput($request->all());
+            redirect('register');
+        }
+
+        // Strict duplicate / account check
+        $existingGraduate = Database::fetch(
+            'SELECT g.id, g.student_number, g.first_name, g.last_name, g.user_id, u.id AS linked_user_id
+             FROM graduates g
+             LEFT JOIN users u ON u.graduate_id = g.id AND u.deleted_at IS NULL
+             WHERE LOWER(TRIM(g.student_number)) = LOWER(?)',
+            [$data['student_number']]
+        );
+
+        if ($existingGraduate) {
+            if (!empty($existingGraduate['user_id']) || !empty($existingGraduate['linked_user_id'])) {
+                flash('error', "Student Number '{$data['student_number']}' is already registered with an account. Please sign in or use Forgot Password.");
+                Session::flashOldInput($request->all());
+                redirect('register');
+            }
+
+            // Protect existing pre-imported record from being claimed with a mismatched name
+            $regLast = strtolower((string) ($data['last_name'] ?? ''));
+            $dbLast = strtolower((string) ($existingGraduate['last_name'] ?? ''));
+            if ($dbLast !== '' && $regLast !== '' && !str_contains($dbLast, $regLast) && !str_contains($regLast, $dbLast)) {
+                flash('error', "Student Number '{$data['student_number']}' already belongs to graduate record {$existingGraduate['first_name']} {$existingGraduate['last_name']}. Please check your student ID number.");
+                Session::flashOldInput($request->all());
+                redirect('register');
+            }
+        }
+
         $validator = (new Validator($data))
             ->required('student_number', 'first_name', 'last_name', 'email', 'password', 'program_id', 'batch_id')
             ->email('email')
             ->unique('email', 'users')
-            ->unique('student_number', 'graduates', 'student_number')
             ->in('program_id', $this->optionIds('programs'))
             ->in('batch_id', $this->optionIds('batches'))
             ->password('password')

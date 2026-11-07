@@ -111,6 +111,7 @@ $router->get('/admin/graduates/export', 'Admin\GraduateController@export')->midd
 $router->get('/admin/graduates/import', 'Admin\GraduateController@import')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/graduates/import/template', 'Admin\GraduateController@downloadTemplate')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->post('/admin/graduates/import', 'Admin\GraduateController@importProcess')->middleware(AuthMiddleware::class, AdminMiddleware::class);
+$router->get('/admin/graduates/check-id', 'Admin\GraduateController@checkId')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/graduates/{id}', 'Admin\GraduateController@show')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->post('/admin/graduates/{id}/validate', 'Admin\GraduateController@validate')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->post('/admin/graduates/{id}/unvalidate', 'Admin\GraduateController@unvalidate')->middleware(AuthMiddleware::class, AdminMiddleware::class);

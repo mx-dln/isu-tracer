@@ -58,6 +58,32 @@ class GraduateController extends Controller
         Csrf::validateOrAbort();
         $data = $request->all();
 
+        // Trim and sanitize all string inputs
+        foreach ($data as $k => $v) {
+            if (is_string($v)) {
+                $data[$k] = trim($v);
+            }
+        }
+        $data['student_number'] = strtoupper((string) ($data['student_number'] ?? ''));
+
+        // Format validation on student_number
+        if (!preg_match('/^[A-Z0-9\-_]{3,50}$/', $data['student_number'])) {
+            flash('error', 'Student ID Number must be 3-50 characters (letters, numbers, hyphens only).');
+            Session::flashOldInput($request->all());
+            back();
+        }
+
+        // Strict duplicate check (case-insensitive, trimmed)
+        $existing = Database::fetch(
+            'SELECT id, student_number, first_name, last_name, graduation_year FROM graduates WHERE LOWER(TRIM(student_number)) = LOWER(?)',
+            [$data['student_number']]
+        );
+        if ($existing) {
+            flash('error', "Student ID Number '{$data['student_number']}' already exists and is assigned to {$existing['first_name']} {$existing['last_name']} (Batch {$existing['graduation_year']}). Each graduate must have a unique ID number.");
+            Session::flashOldInput($request->all());
+            back();
+        }
+
         $validator = (new Validator($data))
             ->required('student_number', 'first_name', 'last_name', 'program_id', 'batch_id')
             ->maxLength('student_number', 50)
@@ -139,6 +165,33 @@ class GraduateController extends Controller
         }
 
         $data = $request->all();
+
+        // Trim and sanitize all string inputs
+        foreach ($data as $k => $v) {
+            if (is_string($v)) {
+                $data[$k] = trim($v);
+            }
+        }
+        $data['student_number'] = strtoupper((string) ($data['student_number'] ?? ''));
+
+        // Format validation on student_number
+        if (!preg_match('/^[A-Z0-9\-_]{3,50}$/', $data['student_number'])) {
+            flash('error', 'Student ID Number must be 3-50 characters (letters, numbers, hyphens only).');
+            Session::flashOldInput($request->all());
+            back();
+        }
+
+        // Strict duplicate check (case-insensitive, trimmed, excluding current graduate)
+        $existing = Database::fetch(
+            'SELECT id, student_number, first_name, last_name, graduation_year FROM graduates WHERE LOWER(TRIM(student_number)) = LOWER(?) AND id != ?',
+            [$data['student_number'], $id]
+        );
+        if ($existing) {
+            flash('error', "Student ID Number '{$data['student_number']}' already belongs to graduate {$existing['first_name']} {$existing['last_name']} (Batch {$existing['graduation_year']}).");
+            Session::flashOldInput($request->all());
+            back();
+        }
+
         $validator = (new Validator($data))
             ->required('student_number', 'first_name', 'last_name', 'program_id', 'batch_id')
             ->maxLength('student_number', 50)
@@ -175,6 +228,49 @@ class GraduateController extends Controller
         Graduate::update($id, $data);
         $this->audit('update', 'graduates', "Updated graduate {$graduate['student_number']} ({$graduate['first_name']} {$graduate['last_name']}).");
         $this->success('Graduate record updated successfully.', 'admin/graduates');
+    }
+
+    public function checkId(Request $request): never
+    {
+        $sn = strtoupper(trim((string) $request->query('student_number', '')));
+        $ignoreId = (int) $request->query('ignore_id', 0);
+
+        if ($sn === '') {
+            $this->json(['available' => true, 'message' => '']);
+        }
+
+        if (!preg_match('/^[A-Z0-9\-_]{3,50}$/', $sn)) {
+            $this->json([
+                'available' => false,
+                'invalid'   => true,
+                'message'   => 'Format should be 3-50 letters, numbers, hyphens (e.g. 2021-0001).'
+            ]);
+        }
+
+        $sql = 'SELECT id, student_number, first_name, last_name, graduation_year FROM graduates WHERE LOWER(TRIM(student_number)) = LOWER(?)';
+        $params = [$sn];
+        if ($ignoreId > 0) {
+            $sql .= ' AND id != ?';
+            $params[] = $ignoreId;
+        }
+
+        $existing = Database::fetch($sql, $params);
+
+        if ($existing) {
+            $this->json([
+                'available' => false,
+                'existing'  => [
+                    'name' => trim($existing['first_name'] . ' ' . $existing['last_name']),
+                    'year' => $existing['graduation_year'],
+                ],
+                'message'   => "Already assigned to {$existing['first_name']} {$existing['last_name']} (Batch {$existing['graduation_year']})"
+            ]);
+        }
+
+        $this->json([
+            'available' => true,
+            'message'   => 'Student ID number is available.'
+        ]);
     }
 
     public function destroy(Request $request, array $params): void
