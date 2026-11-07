@@ -27,6 +27,50 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
         </div>
     </div>
 
+    <!-- Validation & Verification Status -->
+    <div class="space-y-3">
+        <?php if (!empty($user['is_validated'])): ?>
+            <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl px-4 py-3 text-sm">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <i data-lucide="badge-check" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-semibold text-emerald-950">Official Graduate Record Validated</p>
+                    <p class="text-xs text-emerald-800 mt-0.5">Your academic and graduate identity has been verified and validated by the IAT Administration<?= !empty($user['validated_at']) ? ' on ' . date('M j, Y', strtotime($user['validated_at'])) : '' ?>.</p>
+                </div>
+                <span class="badge-green shrink-0"><i data-lucide="check" class="w-3 h-3"></i> Validated</span>
+            </div>
+        <?php else: ?>
+            <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 text-sm">
+                <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                    <i data-lucide="clock" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-semibold text-amber-950">Information Pending Administrative Validation</p>
+                    <p class="text-xs text-amber-800 mt-0.5">Your graduate profile has been submitted and is currently queued for official review by the IAT Administration. You may continue to complete your survey and employment details.</p>
+                </div>
+                <span class="badge-amber shrink-0"><i data-lucide="clock" class="w-3 h-3"></i> Pending</span>
+            </div>
+        <?php endif; ?>
+
+        <?php if (empty($user['phone_verified_at']) && !empty($user['contact_number'])): ?>
+            <div class="flex items-center justify-between gap-3 bg-sky-50 border border-sky-200 text-sky-900 rounded-xl px-4 py-3 text-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-sky-950">Verify Your Mobile Number</p>
+                        <p class="text-xs text-sky-800 mt-0.5">Your contact number (<?= e($user['contact_number']) ?>) is not yet verified via OTP.</p>
+                    </div>
+                </div>
+                <a href="<?= url('graduate/profile') ?>#verification" class="btn-primary !py-1.5 !px-3 !text-xs shrink-0">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Verify via OTP
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <!-- Completion progress -->
     <div class="card">
         <div class="card-header"><h2 class="font-semibold text-ink-800">Tracer Study Completion</h2></div>

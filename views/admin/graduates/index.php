@@ -130,7 +130,14 @@ $statusLabel = [
                         <td><?= (int) $g['batch_year'] ?></td>
                         <td class="!whitespace-normal max-w-[180px]">
                             <?php if ($g['email']): ?><p class="truncate text-ink-600"><?= e($g['email']) ?></p><?php endif; ?>
-                            <?php if ($g['contact_number']): ?><p class="text-xs text-ink-400"><?= e($g['contact_number']) ?></p><?php endif; ?>
+                            <?php if ($g['contact_number']): ?>
+                                <p class="text-xs text-ink-400 flex items-center gap-1">
+                                    <span><?= e($g['contact_number']) ?></span>
+                                    <?php if (!empty($g['phone_verified_at'])): ?>
+                                        <span class="text-emerald-600" title="Phone OTP Verified"><i data-lucide="shield-check" class="w-3.5 h-3.5 inline"></i></span>
+                                    <?php endif; ?>
+                                </p>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?php if ($g['employment_status'] && isset($statusLabel[$g['employment_status']])): ?>
@@ -141,13 +148,24 @@ $statusLabel = [
                         </td>
                         <td>
                             <?php if ($g['is_validated']): ?>
-                                <span class="badge-green">Validated</span>
+                                <span class="badge-green" title="Validated on <?= !empty($g['validated_at']) ? date('M j, Y', strtotime($g['validated_at'])) : 'N/A' ?>">Validated</span>
                             <?php else: ?>
                                 <span class="badge-amber">Pending</span>
                             <?php endif; ?>
                         </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
+                                <?php if (!$g['is_validated']): ?>
+                                    <form method="POST" action="<?= url('admin/graduates/' . (int) $g['id'] . '/validate') ?>" class="inline" title="Validate Information">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="icon-btn !text-emerald-600 hover:!bg-emerald-50" title="Validate Information"><i data-lucide="badge-check" class="w-4 h-4"></i></button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="POST" action="<?= url('admin/graduates/' . (int) $g['id'] . '/unvalidate') ?>" class="inline" title="Revoke Validation" onsubmit="return confirmAction('Revoke validation status for this graduate?', this);">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="icon-btn !text-amber-600 hover:!bg-amber-50" title="Revoke Validation"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+                                    </form>
+                                <?php endif; ?>
                                 <a href="<?= url('admin/graduates/' . (int) $g['id']) ?>" class="icon-btn" title="View"><i data-lucide="eye" class="w-4 h-4"></i></a>
                                 <a href="<?= url('admin/graduates/' . (int) $g['id'] . '/edit') ?>" class="icon-btn" title="Edit"><i data-lucide="pencil" class="w-4 h-4"></i></a>
                                 <form method="POST" action="<?= url('admin/graduates/' . (int) $g['id']) ?>" onsubmit="return confirmAction('Delete graduate <?= e(addslashes($g['student_number'])) ?>? This cannot be undone.', this);">

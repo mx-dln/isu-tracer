@@ -78,8 +78,76 @@ class ProfileController extends Controller
         }
 
         // Preserve admin-managed fields by merging over the existing row.
+        // If phone was changed, reset phone_verified_at so it can be re-verified
+        $oldPhone = trim((string) ($graduate['contact_number'] ?? ''));
+        $newPhone = trim((string) ($payload['contact_number'] ?? ''));
+        if ($newPhone !== '' && $newPhone !== $oldPhone) {
+            $payload['phone_verified_at'] = null;
+        }
+
         Graduate::update($graduateId, array_merge($graduate, $payload));
         $this->audit('update', 'graduate-profile', "Graduate updated their profile (graduate {$graduateId}).");
         $this->success('Profile updated successfully.', 'graduate/profile');
+    }
+
+    public function sendOtp(Request $request): void
+    {
+        Csrf::validateOrAbort();
+        $graduateId = $this->graduateId();
+        $graduate = Graduate::find($graduateId);
+        if (!$graduate) {
+            abort(404, 'Graduate not found.');
+        }
+
+        $phone = trim((string) $request->input('contact_number', $graduate['contact_number'] ?? ''));
+        if ($phone === '') {
+            flash('error', 'Please enter a contact number to verify.');
+            back();
+        }
+
+        // Update contact number if changed
+        if ($phone !== ($graduate['contact_number'] ?? '')) {
+            Database::run('UPDATE graduates SET contact_number = ?, phone_verified_at = NULL WHERE id = ?', [$phone, $graduateId]);
+        }
+
+        $otpService = new \App\Services\OtpService();
+        $res = $otpService->send($phone, $graduateId, (int) auth()->id, 'profile_verification');
+
+        if (!$res['success']) {
+            flash('error', $res['error']);
+            back();
+        }
+
+        Session::put('profile_otp_phone', $res['phone']);
+        if ($res['simulated'] && !empty($res['code'])) {
+            flash('info', "DEMO / TEST MODE: SMS simulated. Your OTP code is {$res['code']}");
+        } else {
+            flash('success', 'Verification code sent to ' . \App\Services\OtpService::maskPhone($res['phone']) . ' via SMS.');
+        }
+
+        back();
+    }
+
+    public function verifyOtp(Request $request): void
+    {
+        Csrf::validateOrAbort();
+        $graduateId = $this->graduateId();
+        $code = trim((string) $request->input('otp_code', ''));
+        $phone = (string) Session::get('profile_otp_phone', '');
+
+        if ($phone === '') {
+            $graduate = Graduate::find($graduateId);
+            $phone = (string) ($graduate['contact_number'] ?? '');
+        }
+
+        $otpService = new \App\Services\OtpService();
+        if ($otpService->verify($phone, $code, 'profile_verification')) {
+            Session::forget('profile_otp_phone');
+            flash('success', 'Your mobile number has been successfully verified via OTP!');
+        } else {
+            flash('error', 'Invalid or expired OTP code. Please check the code and try again.');
+        }
+
+        back();
     }
 }

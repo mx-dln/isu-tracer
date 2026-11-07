@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $userId = Auth::id();
         $user = Database::fetch(
             'SELECT u.*, g.id AS graduate_id, g.student_number, g.first_name, g.middle_name, g.last_name,
-                    g.program_id, g.batch_id, g.graduation_year, g.is_validated,
+                    g.program_id, g.major, g.batch_id, g.graduation_year, g.is_validated, g.phone_verified_at, g.validated_at, g.contact_number,
                     p.name AS program_name, b.year AS batch_year
              FROM users u
              JOIN graduates g ON g.id = u.graduate_id

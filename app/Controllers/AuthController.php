@@ -154,10 +154,100 @@ class AuthController extends Controller
             redirect('register');
         }
 
-        Auth::login((int) Database::fetch('SELECT id FROM users WHERE graduate_id = ?', [$graduateId])['id']);
+        $userId = (int) Database::fetch('SELECT id FROM users WHERE graduate_id = ?', [$graduateId])['id'];
+
+        // If contact number provided, send SMS OTP via Semaphore
+        $contactNumber = trim((string) ($data['contact_number'] ?? ''));
+        if ($contactNumber !== '') {
+            $otpService = new \App\Services\OtpService();
+            $res = $otpService->send($contactNumber, $graduateId, $userId, 'registration');
+            if ($res['success']) {
+                Session::put('otp_registration', [
+                    'user_id'     => $userId,
+                    'graduate_id' => $graduateId,
+                    'phone'       => $res['phone'],
+                    'student_no'  => $data['student_number'],
+                ]);
+                $this->audit('register_otp_dispatched', 'auth', "Registration OTP sent for student #{$data['student_number']}");
+                if ($res['simulated'] && !empty($res['code'])) {
+                    flash('info', "DEMO / TEST MODE: SMS simulated. Your OTP code is {$res['code']}");
+                }
+                flash('success', 'Your account has been created! Please verify your mobile number with the OTP code sent via SMS.');
+                redirect('verify-otp');
+            }
+        }
+
+        Auth::login($userId);
         $this->audit('register', 'auth', "New graduate account registered (student #{$data['student_number']})");
         flash('success', 'Your account has been created. Welcome!');
         redirect('graduate/dashboard');
+    }
+
+    public function showVerifyOtp(Request $request): void
+    {
+        $reg = Session::get('otp_registration');
+        if (!$reg) {
+            redirect('login');
+        }
+
+        View::render('auth/verify-otp', [
+            'title' => 'Verify Mobile Number',
+            'phone' => (string) ($reg['phone'] ?? ''),
+        ], 'auth');
+    }
+
+    public function verifyOtp(Request $request): void
+    {
+        Csrf::validateOrAbort();
+        $reg = Session::get('otp_registration');
+        if (!$reg) {
+            redirect('login');
+        }
+
+        $code = trim((string) $request->input('otp_code', ''));
+        $otpService = new \App\Services\OtpService();
+
+        if ($otpService->verify((string) $reg['phone'], $code, 'registration')) {
+            Session::forget('otp_registration');
+            Auth::login((int) $reg['user_id']);
+            $this->audit('register_otp_verified', 'auth', "Graduate mobile number verified for student #{$reg['student_no']}");
+            flash('success', 'Mobile number verified successfully! Welcome to the IAT Tracer Study.');
+            redirect('graduate/dashboard');
+        }
+
+        flash('error', 'Invalid or expired OTP code. Please try again.');
+        redirect('verify-otp');
+    }
+
+    public function resendOtp(Request $request): void
+    {
+        Csrf::validateOrAbort();
+        $reg = Session::get('otp_registration');
+        if (!$reg) {
+            redirect('login');
+        }
+
+        $otpService = new \App\Services\OtpService();
+        $res = $otpService->send((string) $reg['phone'], (int) $reg['graduate_id'], (int) $reg['user_id'], 'registration');
+
+        if ($res['success']) {
+            if ($res['simulated'] && !empty($res['code'])) {
+                flash('info', "DEMO / TEST MODE: SMS simulated. Your OTP code is {$res['code']}");
+            }
+            flash('success', 'A new verification code has been sent to your mobile number.');
+        } else {
+            flash('error', $res['error'] ?? 'Failed to resend OTP.');
+        }
+
+        redirect('verify-otp');
+    }
+
+    public function keepAlive(Request $request): void
+    {
+        Session::put('_last_activity', time());
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'timestamp' => time()]);
+        exit;
     }
 
     /**

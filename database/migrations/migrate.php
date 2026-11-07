@@ -60,13 +60,15 @@ try {
         }
 
         $sql = file_get_contents($file);
-        // Split on statement-terminating semicolons followed by a newline.
-        $statements = preg_split('/;\s*\R/', trim($sql));
+        // Remove single-line comments (-- ...) before splitting
+        $cleanSql = preg_replace('/^--.*$/m', '', $sql);
+        // Split on statement-terminating semicolons followed by newline or EOF
+        $statements = preg_split('/;\s*(\R|$)/', trim($cleanSql));
 
         try {
             foreach ($statements as $statement) {
                 $statement = trim($statement);
-                if ($statement === '' || str_starts_with($statement, '--')) {
+                if ($statement === '') {
                     continue;
                 }
                 $pdo->exec($statement);

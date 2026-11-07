@@ -27,6 +27,10 @@ $router->get('/login', 'AuthController@showLoginForm')->middleware(GuestMiddlewa
 $router->post('/login', 'AuthController@login')->middleware(GuestMiddleware::class);
 $router->get('/register', 'AuthController@showRegisterForm')->middleware(GuestMiddleware::class);
 $router->post('/register', 'AuthController@register')->middleware(GuestMiddleware::class);
+$router->get('/verify-otp', 'AuthController@showVerifyOtp');
+$router->post('/verify-otp', 'AuthController@verifyOtp');
+$router->post('/verify-otp/resend', 'AuthController@resendOtp');
+$router->post('/auth/keep-alive', 'AuthController@keepAlive')->middleware(AuthMiddleware::class);
 $router->post('/logout', 'AuthController@logout')->middleware(AuthMiddleware::class);
 
 $router->get('/auth/forgot', 'AuthController@showForgotForm')->middleware(GuestMiddleware::class);
@@ -108,6 +112,8 @@ $router->get('/admin/graduates/import', 'Admin\GraduateController@import')->midd
 $router->get('/admin/graduates/import/template', 'Admin\GraduateController@downloadTemplate')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->post('/admin/graduates/import', 'Admin\GraduateController@importProcess')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/graduates/{id}', 'Admin\GraduateController@show')->middleware(AuthMiddleware::class, AdminMiddleware::class);
+$router->post('/admin/graduates/{id}/validate', 'Admin\GraduateController@validate')->middleware(AuthMiddleware::class, AdminMiddleware::class);
+$router->post('/admin/graduates/{id}/unvalidate', 'Admin\GraduateController@unvalidate')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->get('/admin/graduates/{id}/edit', 'Admin\GraduateController@edit')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->put('/admin/graduates/{id}', 'Admin\GraduateController@update')->middleware(AuthMiddleware::class, AdminMiddleware::class);
 $router->delete('/admin/graduates/{id}', 'Admin\GraduateController@destroy')->middleware(AuthMiddleware::class, AdminMiddleware::class);
@@ -245,6 +251,8 @@ $router->post('/graduate/curriculum-feedback', 'Graduate\CurriculumController@su
 $router->get('/graduate/dashboard', 'Graduate\DashboardController@index')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 $router->get('/graduate/profile', 'Graduate\ProfileController@index')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 $router->post('/graduate/profile', 'Graduate\ProfileController@update')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
+$router->post('/graduate/profile/send-otp', 'Graduate\ProfileController@sendOtp')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
+$router->post('/graduate/profile/verify-otp', 'Graduate\ProfileController@verifyOtp')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 
 // ------------------------------------------------------------------
 // Graduate: notifications (Phase 9)

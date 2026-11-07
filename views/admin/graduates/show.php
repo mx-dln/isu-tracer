@@ -34,6 +34,21 @@ $typeLabel = [
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <?php if (!$g['is_validated']): ?>
+                <form method="POST" action="<?= url('admin/graduates/' . (int) $g['id'] . '/validate') ?>" class="inline">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn-primary !bg-emerald-600 hover:!bg-emerald-700">
+                        <i data-lucide="badge-check" class="w-4 h-4"></i> Validate Information
+                    </button>
+                </form>
+            <?php else: ?>
+                <form method="POST" action="<?= url('admin/graduates/' . (int) $g['id'] . '/unvalidate') ?>" class="inline" onsubmit="return confirmAction('Revoke validation for this graduate?', this);">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn-secondary !text-red-600 hover:!bg-red-50">
+                        <i data-lucide="x-circle" class="w-4 h-4"></i> Revoke Validation
+                    </button>
+                </form>
+            <?php endif; ?>
             <a href="<?= url('admin/graduates/' . (int) $g['id'] . '/edit') ?>" class="btn-secondary"><i data-lucide="pencil" class="w-4 h-4"></i> Edit</a>
             <a href="<?= url('admin/graduates') ?>" class="btn-secondary"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</a>
         </div>
@@ -42,10 +57,22 @@ $typeLabel = [
     <!-- Status badges -->
     <div class="flex flex-wrap items-center gap-2">
         <?php if ($g['is_validated']): ?>
-            <span class="badge-green"><i data-lucide="badge-check" class="w-3 h-3"></i> Validated</span>
+            <span class="badge-green" title="Validated on <?= !empty($g['validated_at']) ? date('M j, Y g:i A', strtotime($g['validated_at'])) : 'N/A' ?><?= !empty($g['validator_name']) ? ' by ' . e($g['validator_name']) : '' ?>">
+                <i data-lucide="badge-check" class="w-3 h-3"></i> Validated
+                <?php if (!empty($g['validated_at'])): ?>
+                    <span class="text-[11px] opacity-80">(<?= date('M j, Y', strtotime($g['validated_at'])) ?>)</span>
+                <?php endif; ?>
+            </span>
         <?php else: ?>
             <span class="badge-amber"><i data-lucide="clock" class="w-3 h-3"></i> Pending Validation</span>
         <?php endif; ?>
+
+        <?php if (!empty($g['phone_verified_at'])): ?>
+            <span class="badge-green"><i data-lucide="shield-check" class="w-3 h-3"></i> Phone OTP Verified</span>
+        <?php else: ?>
+            <span class="badge-gray"><i data-lucide="phone" class="w-3 h-3"></i> Phone Unverified</span>
+        <?php endif; ?>
+
         <?php if ($g['is_demo']): ?>
             <span class="badge-gray">DEMO DATA</span>
         <?php endif; ?>
@@ -64,19 +91,23 @@ $typeLabel = [
             <div class="card-body space-y-3 text-sm">
                 <?php
                 $rows = [
-                    'Email'          => $g['email'] ?? null,
-                    'Contact Number' => $g['contact_number'] ?? null,
-                    'Sex'            => $g['sex'] ?? null,
-                    'Birth Date'     => $g['birth_date'] ?? null,
-                    'Civil Status'   => $g['civil_status'] ?? null,
-                    'Address'        => $g['address'] ?? null,
-                    'Municipality'   => $g['municipality'] ?? null,
-                    'Province'       => $g['province'] ?? null,
-                    'Program'        => $g['program_name'] ?? null,
-                    'Major'          => $g['major'] ?? null,
-                    'Batch'          => ($g['batch_year'] ?? null) ? (int) $g['batch_year'] : null,
-                    'Graduation Year'=> $g['graduation_year'] ?? null,
-                    'Recorded'       => $g['created_at'] ?? null,
+                    'Email'              => $g['email'] ?? null,
+                    'Contact Number'     => ($g['contact_number'] ?? null) ? $g['contact_number'] . (!empty($g['phone_verified_at']) ? ' (OTP Verified)' : ' (Unverified)') : null,
+                    'Phone Verification' => !empty($g['phone_verified_at']) ? 'Verified on ' . date('M j, Y g:i A', strtotime($g['phone_verified_at'])) : 'Not Verified',
+                    'Validation Status'  => $g['is_validated'] ? 'Validated' : 'Pending Validation',
+                    'Validated Date'     => !empty($g['validated_at']) ? date('M j, Y g:i A', strtotime($g['validated_at'])) : null,
+                    'Validated By'       => $g['validator_name'] ?? null,
+                    'Sex'                => $g['sex'] ?? null,
+                    'Birth Date'         => $g['birth_date'] ?? null,
+                    'Civil Status'       => $g['civil_status'] ?? null,
+                    'Address'            => $g['address'] ?? null,
+                    'Municipality'       => $g['municipality'] ?? null,
+                    'Province'           => $g['province'] ?? null,
+                    'Program'            => $g['program_name'] ?? null,
+                    'Major'              => $g['major'] ?? null,
+                    'Batch'              => ($g['batch_year'] ?? null) ? (int) $g['batch_year'] : null,
+                    'Graduation Year'    => $g['graduation_year'] ?? null,
+                    'Recorded'           => $g['created_at'] ?? null,
                 ];
                 ?>
                 <?php foreach ($rows as $label => $value): ?>

@@ -31,6 +31,77 @@ $old = $old ?? [];
                 <p class="text-xs text-ink-500">Graduation Year</p>
                 <p class="text-sm font-semibold text-ink-900"><?= e($graduate['graduation_year'] ?? '—') ?></p>
             </div>
+            <div class="sm:col-span-3 pt-3 border-t border-ink-100 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-ink-500">Validation Status:</span>
+                    <?php if (!empty($graduate['is_validated'])): ?>
+                        <span class="badge-green"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i> Validated Graduate Record</span>
+                    <?php else: ?>
+                        <span class="badge-amber"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Pending Administrative Validation</span>
+                    <?php endif; ?>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-ink-500">Phone Verification:</span>
+                    <?php if (!empty($graduate['phone_verified_at'])): ?>
+                        <span class="badge-green"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Verified via OTP</span>
+                    <?php else: ?>
+                        <span class="badge-gray"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Unverified</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Verification (Semaphore OTP) -->
+    <div id="verification" class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="font-semibold text-ink-800 flex items-center gap-2">
+                    <i data-lucide="smartphone" class="w-4 h-4 text-brand-600"></i>
+                    Mobile Number Verification (SMS OTP)
+                </h3>
+                <p class="text-xs text-ink-500 mt-0.5">Verify your Philippine mobile number via SMS OTP to receive tracer alerts and authenticate your graduate profile.</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border <?= !empty($graduate['phone_verified_at']) ? 'border-emerald-200 bg-emerald-50/60' : 'border-ink-200 bg-ink-50/60' ?>">
+                <div>
+                    <p class="text-xs text-ink-500">Current Mobile Number</p>
+                    <p class="text-base font-bold text-ink-900"><?= e($graduate['contact_number'] ?: 'Not yet provided') ?></p>
+                    <?php if (!empty($graduate['phone_verified_at'])): ?>
+                        <p class="text-xs text-emerald-700 mt-1 flex items-center gap-1 font-medium">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verified on <?= date('M j, Y g:i A', strtotime($graduate['phone_verified_at'])) ?>
+                        </p>
+                    <?php else: ?>
+                        <p class="text-xs text-amber-700 mt-1 flex items-center gap-1">
+                            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Unverified &middot; Request an OTP code below to verify this number
+                        </p>
+                    <?php endif; ?>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <form method="POST" action="<?= url('graduate/profile/send-otp') ?>" class="inline">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="contact_number" value="<?= e($graduate['contact_number'] ?? '') ?>">
+                        <button type="submit" class="btn-primary !py-2 !text-xs">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> <?= !empty($graduate['phone_verified_at']) ? 'Re-verify with OTP' : 'Send OTP Code' ?>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <?php if (\App\Core\Session::has('profile_otp_phone')): ?>
+                <form method="POST" action="<?= url('graduate/profile/verify-otp') ?>" class="mt-4 p-4 rounded-xl border border-brand-200 bg-brand-50/40">
+                    <?= csrf_field() ?>
+                    <p class="text-xs font-semibold text-brand-900 mb-2">Enter the 6-digit OTP code sent to <?= e(\App\Services\OtpService::maskPhone(\App\Core\Session::get('profile_otp_phone'))) ?>:</p>
+                    <div class="flex items-center gap-2 max-w-sm">
+                        <input type="text" name="otp_code" required maxlength="6" pattern="[0-9]{6}" placeholder="6-digit code" class="input !py-1.5 font-mono tracking-widest text-center text-base" autofocus>
+                        <button type="submit" class="btn-primary !py-2 !text-xs shrink-0">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Confirm OTP
+                        </button>
+                    </div>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 

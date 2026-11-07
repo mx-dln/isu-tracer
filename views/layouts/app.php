@@ -230,6 +230,7 @@ $validationErrors = \App\Core\Session::pullErrors();
 </div>
 
 <?= \App\Core\View::partial('partials/_manual_slider', ['role' => $role]) ?>
+<?= \App\Core\View::partial('partials/_auto_logout') ?>
 
 <!-- Toast container -->
 <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 w-80 max-w-[calc(100vw-2rem)]"></div>

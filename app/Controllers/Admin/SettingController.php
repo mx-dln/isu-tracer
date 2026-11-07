@@ -45,12 +45,16 @@ class SettingController extends Controller
             ['key' => 'deadline_reminder_days', 'label' => 'Deadline Reminder (days)', 'group' => 'notifications', 'type' => 'number'],
             ['key' => 'profile_update_interval_days', 'label' => 'Profile Update Interval (days)', 'group' => 'notifications', 'type' => 'number'],
             ['key' => 'employment_update_interval_days', 'label' => 'Employment Update Interval (days)', 'group' => 'notifications', 'type' => 'number'],
+
+            // Security & Session
+            ['key' => 'auto_logout_minutes', 'label' => 'Auto-Logout Inactivity Timeout (minutes)', 'group' => 'security', 'type' => 'number'],
+            ['key' => 'require_phone_verification', 'label' => 'Require SMS OTP Phone Verification on Registration', 'group' => 'security', 'type' => 'checkbox'],
         ];
     }
 
     public function index(Request $request): void
     {
-        $groups = ['general' => 'General', 'thresholds' => 'Thresholds', 'notifications' => 'Notifications'];
+        $groups = ['general' => 'General', 'thresholds' => 'Thresholds', 'notifications' => 'Notifications', 'security' => 'Security & Session'];
         $values = Setting::all();
 
         $fields = [];

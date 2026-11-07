@@ -31,8 +31,8 @@ $batches = $batches ?? [];
                 <input type="text" id="last_name" name="last_name" value="<?= e(old('last_name', '')) ?>" class="input" required>
             </div>
             <div>
-                <label for="contact_number" class="label">Contact Number</label>
-                <input type="text" id="contact_number" name="contact_number" value="<?= e(old('contact_number', '')) ?>" class="input">
+                <label for="contact_number" class="label">Contact Number <span class="text-xs text-ink-500 font-normal">(for SMS OTP)</span></label>
+                <input type="text" id="contact_number" name="contact_number" placeholder="e.g. 09171234567" value="<?= e(old('contact_number', '')) ?>" class="input">
             </div>
             <div>
                 <label for="program_id" class="label">Program <span class="text-red-600">*</span></label>

@@ -190,6 +190,52 @@ class GraduateController extends Controller
         $this->success('Graduate record moved to trash.', 'admin/graduates');
     }
 
+    public function validate(Request $request, array $params): void
+    {
+        Csrf::validateOrAbort();
+        $id = (int) $params['id'];
+        $graduate = Graduate::find($id);
+        if (!$graduate) {
+            abort(404, 'Graduate not found.');
+        }
+
+        $adminId = (int) (auth()->id ?? 1);
+        Graduate::validate($id, $adminId);
+
+        $name = trim(($graduate['first_name'] ?? '') . ' ' . ($graduate['last_name'] ?? ''));
+        $this->audit('validate', 'graduates', "Validated graduate information for {$graduate['student_number']} ({$name}).");
+
+        // Send in-app notification to the graduate user if linked
+        if (!empty($graduate['user_id'])) {
+            Database::run(
+                'INSERT INTO notifications (user_id, type, channel, subject, body, created_at)
+                 VALUES (?, "system_alert", "in_app", "Graduate Information Validated", "Your graduate record and academic credentials have been verified and validated by the IAT Administration.", NOW())',
+                [(int) $graduate['user_id']]
+            );
+        }
+
+        flash('success', "Graduate record for {$name} ({$graduate['student_number']}) has been validated.");
+        back();
+    }
+
+    public function unvalidate(Request $request, array $params): void
+    {
+        Csrf::validateOrAbort();
+        $id = (int) $params['id'];
+        $graduate = Graduate::find($id);
+        if (!$graduate) {
+            abort(404, 'Graduate not found.');
+        }
+
+        Graduate::unvalidate($id);
+
+        $name = trim(($graduate['first_name'] ?? '') . ' ' . ($graduate['last_name'] ?? ''));
+        $this->audit('unvalidate', 'graduates', "Revoked validation for graduate {$graduate['student_number']} ({$name}).");
+
+        flash('info', "Validation status revoked for {$name} ({$graduate['student_number']}).");
+        back();
+    }
+
     /**
      * Export the graduate list as CSV or XLSX.
      */

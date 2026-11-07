@@ -15,10 +15,12 @@ final class Graduate
     {
         return Database::fetch(
             'SELECT g.*, p.code AS program_code, p.name AS program_name,
-                    b.year AS batch_year, b.label AS batch_label
+                    b.year AS batch_year, b.label AS batch_label,
+                    u.name AS validator_name
              FROM graduates g
              JOIN programs p ON p.id = g.program_id
              JOIN batches b ON b.id = g.batch_id
+             LEFT JOIN users u ON u.id = g.validated_by
              WHERE g.id = ? AND g.deleted_at IS NULL',
             [$id]
         );
@@ -86,7 +88,7 @@ final class Graduate
 
         $items = Database::fetchAll(
             "SELECT g.id, g.student_number, g.first_name, g.middle_name, g.last_name, g.suffix,
-                    g.email, g.contact_number, g.sex, g.is_validated, g.is_demo,
+                    g.email, g.contact_number, g.sex, g.is_validated, g.phone_verified_at, g.validated_at, g.validated_by, g.is_demo,
                     g.program_id, g.major, g.batch_id, g.graduation_year,
                     p.code AS program_code, p.name AS program_name,
                     b.year AS batch_year,
@@ -208,6 +210,30 @@ final class Graduate
                 isset($data['is_validated']) ? 1 : 0,
                 $id,
             ]
+        );
+    }
+
+    public static function validate(int $id, int $adminUserId): void
+    {
+        Database::run(
+            'UPDATE graduates SET is_validated = 1, validated_at = NOW(), validated_by = ? WHERE id = ?',
+            [$adminUserId, $id]
+        );
+    }
+
+    public static function unvalidate(int $id): void
+    {
+        Database::run(
+            'UPDATE graduates SET is_validated = 0, validated_at = NULL, validated_by = NULL WHERE id = ?',
+            [$id]
+        );
+    }
+
+    public static function markPhoneVerified(int $id): void
+    {
+        Database::run(
+            'UPDATE graduates SET phone_verified_at = NOW() WHERE id = ?',
+            [$id]
         );
     }
 
