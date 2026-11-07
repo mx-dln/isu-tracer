@@ -118,6 +118,7 @@ final class EmploymentSyncService
             'first_employment_date' => !empty($answers['first_job_date']) ? (string) $answers['first_job_date'] : null,
             'salary_range'          => !empty($answers['salary_range']) ? (string) $answers['salary_range'] : null,
             'job_description'       => !empty($answers['job_description']) ? (string) $answers['job_description'] : null,
+            'proof_image_path'      => !empty($answers['sample_proof_of_employment']) ? (string) $answers['sample_proof_of_employment'] : null,
             'is_related_to_program' => isset($answers['job_relation']) ? self::mapRelated((string) $answers['job_relation']) : null,
             'job_relevance_rating'  => $relevance,
         ];
@@ -134,7 +135,7 @@ final class EmploymentSyncService
 
         $hasEmploymentKeys = !empty(array_intersect(
             array_keys($answers),
-            ['employment_status', 'job_title', 'employer', 'industry_sector', 'employment_type', 'work_location', 'date_hired', 'salary_range', 'job_description', 'first_job_date', 'job_relation', 'job_relevance_rating']
+            ['employment_status', 'job_title', 'employer', 'industry_sector', 'employment_type', 'work_location', 'date_hired', 'salary_range', 'job_description', 'first_job_date', 'job_relation', 'job_relevance_rating', 'sample_proof_of_employment']
         ));
         if (!$hasEmploymentKeys) {
             return null;

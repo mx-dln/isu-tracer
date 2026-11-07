@@ -166,6 +166,28 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
                             <p class="text-sm text-ink-500">Sector: <?= e($employment['sector_name']) ?></p>
                         <?php endif; ?>
                         <p class="text-sm text-ink-500">Updated: <?= date('M j, Y', strtotime($employment['updated_at'])) ?></p>
+
+                        <?php
+                        $hasProof = !empty($employment['proof_image_path']) || !empty($employment['proof_image_url']);
+                        $proofDate = !empty($employment['proof_uploaded_at']) ? $employment['proof_uploaded_at'] : ($hasProof ? $employment['updated_at'] : null);
+                        ?>
+                        <?php if ($hasProof && $proofDate): ?>
+                            <div class="pt-2.5 mt-2 border-t border-ink-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                <span class="text-emerald-700 font-medium flex items-center gap-1.5">
+                                    <i data-lucide="file-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                    Proof: <strong class="text-emerald-900"><?= date('M j, Y \a\t g:i A', strtotime($proofDate)) ?></strong>
+                                </span>
+                                <?php if (!empty($employment['proof_image_path'])): ?>
+                                    <a href="<?= url('graduate/employment/proof') ?>" target="_blank" class="text-brand-700 hover:underline font-semibold flex items-center gap-1">
+                                        <i data-lucide="external-link" class="w-3 h-3"></i> View Proof
+                                    </a>
+                                <?php elseif (!empty($employment['proof_image_url'])): ?>
+                                    <a href="<?= e($employment['proof_image_url']) ?>" target="_blank" rel="noopener noreferrer" class="text-brand-700 hover:underline font-semibold flex items-center gap-1">
+                                        <i data-lucide="external-link" class="w-3 h-3"></i> View Link
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php else: ?>
                     <div class="text-center py-8 text-ink-400">

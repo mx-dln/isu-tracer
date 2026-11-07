@@ -74,7 +74,36 @@ class EmploymentController extends Controller
 
         EmploymentProfile::save($graduateId, $data);
         $this->audit('update', 'employment', "Graduate updated own employment profile (graduate {$graduateId}).");
-        $this->success('Your employment profile has been updated.', 'graduate/employment');
+        
+        $nowFormatted = date('M j, Y \a\t g:i A');
+        $msg = $hasProof
+            ? "Your employment profile and proof of employment have been saved (Uploaded: {$nowFormatted})."
+            : 'Your employment profile has been updated.';
+
+        $this->success($msg, 'graduate/employment');
+    }
+
+    public function proof(Request $request): void
+    {
+        $graduateId = $this->graduateId();
+        $profile = EmploymentProfile::findCurrent($graduateId);
+        if (!$profile || empty($profile['proof_image_path'])) {
+            abort(404, 'Proof of employment image not found.');
+        }
+
+        $relative = ltrim(str_replace('\\', '/', (string) $profile['proof_image_path']), '/');
+        $fullPath = storage_path($relative);
+
+        if (!is_file($fullPath) || !is_readable($fullPath)) {
+            abort(404, 'Proof image file not found on disk.');
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . (string) filesize($fullPath));
+        header('Cache-Control: private, max-age=86400');
+        readfile($fullPath);
+        exit;
     }
 
     public function storeHistory(Request $request): void

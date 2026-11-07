@@ -217,6 +217,7 @@ $router->delete('/admin/employment-sectors/{id}', 'Admin\EmploymentSectorControl
 // ------------------------------------------------------------------
 $router->get('/graduate/employment', 'Graduate\EmploymentController@index')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 $router->post('/graduate/employment', 'Graduate\EmploymentController@update')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
+$router->get('/graduate/employment/proof', 'Graduate\EmploymentController@proof')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 $router->post('/graduate/employment/history', 'Graduate\EmploymentController@storeHistory')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 $router->delete('/graduate/employment/history/{id}', 'Graduate\EmploymentController@destroyHistory')->middleware(AuthMiddleware::class, GraduateMiddleware::class);
 

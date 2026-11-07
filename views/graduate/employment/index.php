@@ -99,32 +99,81 @@ $typeLabel = [
                 <label class="label" for="job_description">Brief Description of Job Duties</label>
                 <textarea name="job_description" id="job_description" rows="3" class="input"><?= e($value('job_description')) ?></textarea>
             </div>
-            <div class="sm:col-span-2 lg:col-span-3 rounded-lg border border-ink-200 bg-ink-50 p-4">
-                <div class="flex flex-col lg:flex-row gap-4">
-                    <div class="flex-1">
-                        <label class="label" for="proof_image">Proof of Employment Image</label>
+            <div class="sm:col-span-2 lg:col-span-3 rounded-xl border border-ink-200 bg-white p-5 shadow-sm space-y-4">
+                <div>
+                    <h4 class="font-semibold text-ink-900 text-sm flex items-center gap-2">
+                        <i data-lucide="file-check" class="w-4 h-4 text-brand-600"></i>
+                        Proof of Employment
+                    </h4>
+                    <p class="text-xs text-ink-500 mt-0.5">
+                        Upload a certificate of employment (COE), company ID, contract, payslip, or provide a link to your proof.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="label" for="proof_image">Upload Proof Image</label>
                         <input type="file" name="proof_image" id="proof_image" class="input" accept="image/jpeg,image/png,image/gif,image/webp">
-                        <p class="text-xs text-ink-500 mt-1">Upload a JPG, PNG, GIF, or WebP image up to 5MB. Use this when your status is employed or self-employed.</p>
+                        <p class="text-xs text-ink-400 mt-1">Accepted formats: JPG, PNG, GIF, WebP (Max 5MB).</p>
                     </div>
-                    <div class="flex-1">
-                        <label class="label" for="proof_image_url">Proof Image Link</label>
+                    <div>
+                        <label class="label" for="proof_image_url">Or Provide Online Image Link</label>
                         <input type="url" name="proof_image_url" id="proof_image_url" class="input" placeholder="https://..." value="<?= e($value('proof_image_url')) ?>">
-                        <p class="text-xs text-ink-500 mt-1">Optional. Paste a link if your proof is already hosted online.</p>
+                        <p class="text-xs text-ink-400 mt-1">Optional. Direct link if hosted online (e.g. Google Drive/Dropbox).</p>
                     </div>
                 </div>
-                <?php if (!empty($profile['proof_image_path']) || !empty($profile['proof_image_url'])): ?>
-                    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-600">
-                        <span class="badge-green">Proof saved</span>
-                        <?php if (!empty($profile['proof_image_url'])): ?>
-                            <a href="<?= e($profile['proof_image_url']) ?>" target="_blank" rel="noopener noreferrer" class="font-medium text-brand-700 hover:underline">Open proof link</a>
-                        <?php endif; ?>
-                        <?php if (!empty($profile['proof_image_path'])): ?>
-                            <span>Uploaded image is on file.</span>
-                        <?php endif; ?>
-                        <?php if (!empty($profile['proof_uploaded_at'])): ?>
-                            <span class="text-ink-400">&middot;</span>
-                            <span>Date Uploaded: <strong class="text-ink-800"><?= date('M j, Y g:i A', strtotime($profile['proof_uploaded_at'])) ?></strong></span>
-                        <?php endif; ?>
+
+                <?php 
+                $hasProof = !empty($profile['proof_image_path']) || !empty($profile['proof_image_url']);
+                $uploadTimestamp = !empty($profile['proof_uploaded_at']) ? $profile['proof_uploaded_at'] : (!empty($profile['updated_at']) && $hasProof ? $profile['updated_at'] : null);
+                ?>
+
+                <?php if ($hasProof): ?>
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3.5">
+                                <?php if (!empty($profile['proof_image_path'])): ?>
+                                    <a href="<?= url('graduate/employment/proof') ?>" target="_blank" class="block w-14 h-14 rounded-lg overflow-hidden border border-emerald-300 bg-white shrink-0 hover:opacity-90 shadow-sm transition">
+                                        <img src="<?= url('graduate/employment/proof') ?>" alt="Proof Preview" class="w-full h-full object-cover">
+                                    </a>
+                                <?php else: ?>
+                                    <div class="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
+                                        <i data-lucide="link-2" class="w-6 h-6"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="badge-green inline-flex items-center gap-1 font-semibold">
+                                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Proof of Employment Uploaded
+                                        </span>
+                                    </div>
+                                    <?php if ($uploadTimestamp): ?>
+                                        <p class="text-xs text-emerald-950 font-medium mt-1.5 flex items-center gap-1.5">
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-700"></i>
+                                            <span>Date & Time Uploaded:</span>
+                                            <strong class="font-bold text-emerald-900"><?= date('F j, Y \a\t g:i A', strtotime($uploadTimestamp)) ?></strong>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <?php if (!empty($profile['proof_image_path'])): ?>
+                                    <a href="<?= url('graduate/employment/proof') ?>" target="_blank" class="btn-secondary !py-1.5 !px-3 !text-xs inline-flex items-center gap-1.5 shadow-sm">
+                                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> View Uploaded Proof
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (!empty($profile['proof_image_url'])): ?>
+                                    <a href="<?= e($profile['proof_image_url']) ?>" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !px-3 !text-xs inline-flex items-center gap-1.5 shadow-sm">
+                                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open Proof Link
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                        <span>No proof of employment uploaded yet. Please upload a clear document image or link once your status is employed or self-employed.</span>
                     </div>
                 <?php endif; ?>
             </div>
