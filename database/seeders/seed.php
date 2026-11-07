@@ -348,7 +348,11 @@ try {
     // ------------------------------------------------------------------
     mt_srand(20261); // deterministic demo data
 
-    $perBatch = [40, 45, 48, 52, 55, 60]; // 2021..2026
+    $batchesToSeed = [
+        2021 => 40,
+        2022 => 45,
+        2026 => 60,
+    ];
     $firstName = ['Juan', 'Maria', 'Jose', 'Ana', 'Pedro', 'Liza', 'Carlos', 'Rosa', 'Miguel', 'Elena', 'Ramon', 'Celia', 'Paolo', 'Diana', 'Marco', 'Sofia', 'Dennis', 'Grace', 'Vicente', 'Nina'];
     $lastName = ['Santos', 'Reyes', 'Cruz', 'Bautista', 'Ocampo', 'Garcia', 'Mendoza', 'Torres', 'Flores', 'Ramos', 'Aquino', 'Domingo', 'Villanueva', 'Navarro', 'Salazar', 'Dela Cruz', 'Roxas', 'Padilla', 'Manalo', 'Santiago'];
 
@@ -360,9 +364,11 @@ try {
     $usedEmails = [];
 
     $i = 0;
-    foreach ($perBatch as $bIdx => $count) {
-        $year = 2021 + $bIdx;
-        $batchId = $batchIds[$year];
+    $bIdx = 0;
+    foreach ($batchesToSeed as $year => $count) {
+        $bIdx++;
+        $batchId = $batchIds[$year] ?? null;
+        if (!$batchId) continue;
 
         // Employment probability grows across years to produce a rising trend.
         $employProb = 0.58 + ($bIdx * 0.045);
