@@ -142,6 +142,12 @@ $statusLabel = [
                         <td>
                             <?php if ($g['employment_status'] && isset($statusLabel[$g['employment_status']])): ?>
                                 <span class="<?= $statusLabel[$g['employment_status']][1] ?>"><?= $statusLabel[$g['employment_status']][0] ?></span>
+                                <?php $jobPos = $g['job_position'] ?? ($g['job_title'] ?? ''); ?>
+                                <?php if (!empty($jobPos)): ?>
+                                    <p class="text-xs text-ink-600 font-medium truncate max-w-[140px] mt-0.5" title="<?= e($jobPos) ?>">
+                                        <?= e($jobPos) ?>
+                                    </p>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <span class="badge-gray">No Data</span>
                             <?php endif; ?>

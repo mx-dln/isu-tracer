@@ -31,6 +31,14 @@ $old = $old ?? [];
                 <p class="text-xs text-ink-500">Graduation Year</p>
                 <p class="text-sm font-semibold text-ink-900"><?= e($graduate['graduation_year'] ?? '—') ?></p>
             </div>
+            <div>
+                <p class="text-xs text-ink-500">Job Position</p>
+                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['job_position'] ?: 'Not indicated / Unemployed') ?></p>
+            </div>
+            <div class="sm:col-span-2">
+                <p class="text-xs text-ink-500">Address</p>
+                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['address'] ?: 'Not indicated') ?></p>
+            </div>
             <div class="sm:col-span-3 pt-3 border-t border-ink-100 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-ink-500">Validation Status:</span>
@@ -168,8 +176,15 @@ $old = $old ?? [];
                 <input type="text" name="province" id="p-province" class="input" maxlength="100" value="<?= e(old('province', $graduate['province'] ?? '')) ?>">
             </div>
             <div class="sm:col-span-2">
+                <label class="label" for="p-job-position">Current Job Position / Title</label>
+                <input type="text" name="job_position" id="p-job-position" class="input" maxlength="191"
+                       placeholder="e.g. Farm Supervisor, Agronomist, Agricultural Officer, Self-employed"
+                       value="<?= e(old('job_position', $graduate['job_position'] ?? '')) ?>">
+                <p class="text-xs text-ink-500 mt-1">Specify your current job title or position if currently employed or self-employed.</p>
+            </div>
+            <div class="sm:col-span-2">
                 <label class="label" for="p-address">Address</label>
-                <textarea name="address" id="p-address" rows="2" class="input"><?= e(old('address', $graduate['address'] ?? '')) ?></textarea>
+                <textarea name="address" id="p-address" rows="2" class="input" placeholder="Barangay / Street, Municipality, Province"><?= e(old('address', $graduate['address'] ?? '')) ?></textarea>
             </div>
         </div>
         <div class="card-footer">

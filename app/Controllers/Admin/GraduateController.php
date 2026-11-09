@@ -118,6 +118,22 @@ class GraduateController extends Controller
             : (int) ($batch['year'] ?? date('Y'));
 
         $id = Graduate::create($data);
+
+        // Synchronize job_position with active employment_profile
+        if (!empty($data['job_position'])) {
+            Database::run(
+                'INSERT INTO employment_profiles (graduate_id, status, job_title, is_current, created_at, updated_at)
+                 VALUES (?, "employed", ?, 1, NOW(), NOW())',
+                [$id, $data['job_position']]
+            );
+        } else {
+            Database::run(
+                'INSERT INTO employment_profiles (graduate_id, status, is_current, created_at, updated_at)
+                 VALUES (?, "unemployed", 1, NOW(), NOW())',
+                [$id]
+            );
+        }
+
         $this->audit('create', 'graduates', "Created graduate {$data['student_number']} ({$data['first_name']} {$data['last_name']}).");
         $this->success('Graduate record added successfully.', 'admin/graduates');
     }
@@ -226,6 +242,26 @@ class GraduateController extends Controller
             : (int) ($batch['year'] ?? date('Y'));
 
         Graduate::update($id, $data);
+
+        // Synchronize job_position with active employment_profile
+        $currentEp = Database::fetch('SELECT id, status, job_title FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL LIMIT 1', [$id]);
+        if (!empty($data['job_position'])) {
+            if ($currentEp) {
+                Database::run(
+                    'UPDATE employment_profiles SET job_title = ?, status = CASE WHEN status = "unemployed" THEN "employed" ELSE status END, updated_at = NOW() WHERE id = ?',
+                    [$data['job_position'], $currentEp['id']]
+                );
+            } else {
+                Database::run(
+                    'INSERT INTO employment_profiles (graduate_id, status, job_title, is_current, created_at, updated_at)
+                     VALUES (?, "employed", ?, 1, NOW(), NOW())',
+                    [$id, $data['job_position']]
+                );
+            }
+        } elseif ($currentEp && !empty($currentEp['job_title']) && empty($data['job_position'])) {
+            Database::run('UPDATE employment_profiles SET job_title = NULL, updated_at = NOW() WHERE id = ?', [$currentEp['id']]);
+        }
+
         $this->audit('update', 'graduates', "Updated graduate {$graduate['student_number']} ({$graduate['first_name']} {$graduate['last_name']}).");
         $this->success('Graduate record updated successfully.', 'admin/graduates');
     }
@@ -349,7 +385,7 @@ class GraduateController extends Controller
 
         $header = [
             'Student Number', 'Last Name', 'First Name', 'Middle Name', 'Suffix', 'Email',
-            'Contact Number', 'Sex', 'Program', 'Major', 'Batch Year', 'Employment Status', 'Proof Image Link',
+            'Contact Number', 'Sex', 'Program', 'Major', 'Batch Year', 'Job Position', 'Address', 'Employment Status', 'Proof Image Link',
             'Uploaded Proof Image', 'Proof Uploaded Date', 'Validated',
         ];
         $data = array_map(static function ($g) {
@@ -364,7 +400,10 @@ class GraduateController extends Controller
                 $g['student_number'], $g['last_name'], $g['first_name'], $g['middle_name'] ?? '', $g['suffix'] ?? '',
                 $g['email'] ?? '', $g['contact_number'] ?? '', $g['sex'] ?? '', $g['program_code'],
                 $g['major'] ?? '',
-                $g['batch_year'], $g['employment_status'] ?? '', $g['proof_image_url'] ?? '',
+                $g['batch_year'],
+                $g['job_position'] ?? ($g['job_title'] ?? ''),
+                $g['address'] ?? '',
+                $g['employment_status'] ?? '', $g['proof_image_url'] ?? '',
                 $uploadedProofUrl, $proofUploadedAt, $g['is_validated'] ? 'Yes' : 'No',
             ];
         }, $rows);
@@ -469,7 +508,23 @@ class GraduateController extends Controller
                 $skipped++;
                 continue;
             }
-            Graduate::create($payload);
+            $graduateId = Graduate::create($payload);
+
+            // Automatically create current employment profile
+            if (!empty($payload['job_position'])) {
+                Database::run(
+                    'INSERT INTO employment_profiles (graduate_id, status, job_title, is_current, created_at, updated_at)
+                     VALUES (?, "employed", ?, 1, NOW(), NOW())',
+                    [$graduateId, $payload['job_position']]
+                );
+            } else {
+                Database::run(
+                    'INSERT INTO employment_profiles (graduate_id, status, is_current, created_at, updated_at)
+                     VALUES (?, "unemployed", 1, NOW(), NOW())',
+                    [$graduateId]
+                );
+            }
+
             $imported++;
         }
         fclose($handle);
@@ -483,11 +538,11 @@ class GraduateController extends Controller
     {
         $header = [
             'student_number', 'first_name', 'middle_name', 'last_name', 'suffix', 'email',
-            'contact_number', 'sex', 'program_code', 'major', 'batch_year',
+            'contact_number', 'sex', 'program_code', 'major', 'batch_year', 'job_position', 'address',
         ];
         $sample = [
             'IAT-2026-0001', 'Juan', 'Dela', 'Cruz', '', 'juan.delacruz@example.com',
-            '09171234567', 'Male', 'BAT', 'Animal Production', '2026',
+            '09171234567', 'Male', 'BAT', 'Animal Production', '2026', 'Farm Supervisor', 'San Fermin, Cauayan City, Isabela',
         ];
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="graduates-import-template.csv"');

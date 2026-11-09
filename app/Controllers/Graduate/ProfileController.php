@@ -70,7 +70,7 @@ class ProfileController extends Controller
         }
         $validator->validateOrFail();
 
-        $allowed = ['first_name', 'middle_name', 'last_name', 'suffix', 'email', 'contact_number', 'sex', 'birth_date', 'civil_status', 'address', 'municipality', 'province'];
+        $allowed = ['first_name', 'middle_name', 'last_name', 'suffix', 'email', 'contact_number', 'sex', 'birth_date', 'civil_status', 'address', 'job_position', 'municipality', 'province'];
         $payload = [];
         foreach ($allowed as $field) {
             $value = isset($data[$field]) ? trim((string) $data[$field]) : '';
@@ -86,6 +86,24 @@ class ProfileController extends Controller
         }
 
         Graduate::update($graduateId, array_merge($graduate, $payload));
+
+        // Synchronize job_position with active employment_profile
+        $currentEp = Database::fetch('SELECT id, status, job_title FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL LIMIT 1', [$graduateId]);
+        if (!empty($payload['job_position'])) {
+            if ($currentEp) {
+                Database::run(
+                    'UPDATE employment_profiles SET job_title = ?, status = CASE WHEN status = "unemployed" THEN "employed" ELSE status END, updated_at = NOW() WHERE id = ?',
+                    [$payload['job_position'], $currentEp['id']]
+                );
+            } else {
+                Database::run(
+                    'INSERT INTO employment_profiles (graduate_id, status, job_title, is_current, created_at, updated_at)
+                     VALUES (?, "employed", ?, 1, NOW(), NOW())',
+                    [$graduateId, $payload['job_position']]
+                );
+            }
+        }
+
         $this->audit('update', 'graduate-profile', "Graduate updated their profile (graduate {$graduateId}).");
         $this->success('Profile updated successfully.', 'graduate/profile');
     }

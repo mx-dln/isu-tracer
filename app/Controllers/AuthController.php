@@ -153,20 +153,22 @@ class AuthController extends Controller
                 if ($existing) {
                     $graduateId = (int) $existing['id'];
                     Database::run(
-                        'UPDATE graduates SET email = ?, first_name = ?, middle_name = ?, last_name = ?, contact_number = ? WHERE id = ?',
+                        'UPDATE graduates SET email = ?, first_name = ?, middle_name = ?, last_name = ?, contact_number = ?, address = COALESCE(?, address), job_position = COALESCE(?, job_position) WHERE id = ?',
                         [
                             $data['email'],
                             trim((string) $data['first_name']),
                             !empty($data['middle_name']) ? trim((string) $data['middle_name']) : null,
                             trim((string) $data['last_name']),
                             $data['contact_number'] ?? null,
+                            !empty($data['address']) ? trim((string) $data['address']) : null,
+                            !empty($data['job_position']) ? trim((string) $data['job_position']) : null,
                             $graduateId,
                         ]
                     );
                 } else {
                     Database::run(
-                        'INSERT INTO graduates (student_number, first_name, middle_name, last_name, email, contact_number, program_id, batch_id, graduation_year, is_validated, is_demo)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
+                        'INSERT INTO graduates (student_number, first_name, middle_name, last_name, email, contact_number, address, job_position, program_id, batch_id, graduation_year, is_validated, is_demo)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
                         [
                             $data['student_number'],
                             trim((string) $data['first_name']),
@@ -174,6 +176,8 @@ class AuthController extends Controller
                             trim((string) $data['last_name']),
                             $data['email'],
                             $data['contact_number'] ?? null,
+                            !empty($data['address']) ? trim((string) $data['address']) : null,
+                            !empty($data['job_position']) ? trim((string) $data['job_position']) : null,
                             $data['program_id'],
                             $data['batch_id'],
                             (int) Database::fetch('SELECT year FROM batches WHERE id = ?', [$data['batch_id']])['year'],
@@ -192,6 +196,7 @@ class AuthController extends Controller
                 $empStatus = in_array($data['employment_status'] ?? '', ['employed', 'self_employed', 'unemployed', 'further_studies'], true)
                     ? $data['employment_status']
                     : 'unemployed';
+                $jobTitle = !empty($data['job_position']) ? trim((string) $data['job_position']) : null;
 
                 $currentProfile = Database::fetch(
                     'SELECT id FROM employment_profiles WHERE graduate_id = ? AND is_current = 1 AND deleted_at IS NULL LIMIT 1',
@@ -199,13 +204,13 @@ class AuthController extends Controller
                 );
                 if ($currentProfile) {
                     Database::run(
-                        'UPDATE employment_profiles SET status = ?, updated_at = NOW() WHERE id = ?',
-                        [$empStatus, $currentProfile['id']]
+                        'UPDATE employment_profiles SET status = ?, job_title = COALESCE(?, job_title), updated_at = NOW() WHERE id = ?',
+                        [$empStatus, $jobTitle, $currentProfile['id']]
                     );
                 } else {
                     Database::run(
-                        'INSERT INTO employment_profiles (graduate_id, status, is_current, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
-                        [$graduateId, $empStatus]
+                        'INSERT INTO employment_profiles (graduate_id, status, job_title, is_current, created_at, updated_at) VALUES (?, ?, ?, 1, NOW(), NOW())',
+                        [$graduateId, $empStatus, $jobTitle]
                     );
                 }
 

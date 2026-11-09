@@ -63,6 +63,14 @@ $batches = $batches ?? [];
                 <p class="text-xs text-ink-500 mt-1">If Unemployed, workplace competency assessment questions will be exempted.</p>
             </div>
             <div>
+                <label for="job_position" class="label">Job Position <span class="text-xs text-ink-500 font-normal">(if employed)</span></label>
+                <input type="text" id="job_position" name="job_position" placeholder="e.g. Farm Supervisor, Agronomist" value="<?= e(old('job_position', '')) ?>" class="input">
+            </div>
+            <div>
+                <label for="address" class="label">Current Address</label>
+                <input type="text" id="address" name="address" placeholder="e.g. Cauayan City, Isabela" value="<?= e(old('address', '')) ?>" class="input">
+            </div>
+            <div>
                 <label for="password" class="label">Password <span class="text-red-600">*</span></label>
                 <input type="password" id="password" name="password" class="input" required>
             </div>

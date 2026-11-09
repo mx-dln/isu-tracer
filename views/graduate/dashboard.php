@@ -19,6 +19,16 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
                     <p class="text-brand-100 text-sm mt-1">
                         <?= e($user['student_number'] ?? '') ?> &middot; <?= e($user['program_name'] ?? '') ?><?= !empty($user['major']) ? ' (' . e($user['major']) . ')' : '' ?> &middot; Batch <?= e($user['batch_year'] ?? '') ?>
                     </p>
+                    <?php if (!empty($user['job_position'])): ?>
+                        <p class="text-xs text-brand-200 mt-0.5 flex items-center gap-1">
+                            <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> <?= e($user['job_position']) ?>
+                        </p>
+                    <?php endif; ?>
+                    <?php if (!empty($user['address'])): ?>
+                        <p class="text-xs text-brand-200 mt-0.5 flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <?= e($user['address']) ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
                 <a href="<?= url('graduate/profile') ?>" class="btn bg-white/15 hover:bg-white/25 text-white border border-white/30">
                     <i data-lucide="user" class="w-4 h-4"></i> Edit Profile
@@ -159,8 +169,12 @@ $curriculumSubmitted = $curriculumSubmitted ?? false;
                                 <span class="badge-amber">Relevance: <?= (int) $employment['job_relevance_rating'] ?>/5</span>
                             <?php endif; ?>
                         </div>
-                        <?php if ($employment['job_title']): ?>
-                            <p class="text-sm text-ink-700"><span class="font-semibold"><?= e($employment['job_title']) ?></span> <?= $employment['employer'] ? '&middot; ' . e($employment['employer']) : '' ?></p>
+                        <?php $jobPos = $user['job_position'] ?? ($employment['job_title'] ?? ''); ?>
+                        <?php if ($jobPos): ?>
+                            <p class="text-sm text-ink-700"><span class="font-semibold"><?= e($jobPos) ?></span> <?= $employment['employer'] ? '&middot; ' . e($employment['employer']) : '' ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($user['address'])): ?>
+                            <p class="text-xs text-ink-500 flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-ink-400"></i> <?= e($user['address']) ?></p>
                         <?php endif; ?>
                         <?php if ($employment['sector_name']): ?>
                             <p class="text-sm text-ink-500">Sector: <?= e($employment['sector_name']) ?></p>

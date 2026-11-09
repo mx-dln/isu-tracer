@@ -73,6 +73,12 @@ class EmploymentController extends Controller
         }
 
         EmploymentProfile::save($graduateId, $data);
+        if (!empty($data['job_title'])) {
+            Database::run('UPDATE graduates SET job_position = ? WHERE id = ?', [$data['job_title'], $graduateId]);
+        } elseif (($data['status'] ?? '') === 'unemployed') {
+            Database::run('UPDATE graduates SET job_position = NULL WHERE id = ?', [$graduateId]);
+        }
+
         $this->audit('update', 'employment', "Graduate updated own employment profile (graduate {$graduateId}).");
         
         $nowFormatted = date('M j, Y \a\t g:i A');

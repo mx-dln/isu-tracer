@@ -89,6 +89,7 @@ final class Graduate
         $items = Database::fetchAll(
             "SELECT g.id, g.student_number, g.first_name, g.middle_name, g.last_name, g.suffix,
                     g.email, g.contact_number, g.sex, g.is_validated, g.phone_verified_at, g.validated_at, g.validated_by, g.is_demo,
+                    g.address, g.job_position, g.municipality, g.province,
                     g.program_id, g.major, g.batch_id, g.graduation_year,
                     p.code AS program_code, p.name AS program_name,
                     b.year AS batch_year,
@@ -153,9 +154,9 @@ final class Graduate
         Database::run(
             'INSERT INTO graduates
                 (student_number, first_name, middle_name, last_name, suffix, email, contact_number,
-                 sex, birth_date, civil_status, address, municipality, province,
+                 sex, birth_date, civil_status, address, job_position, municipality, province,
                  program_id, major, batch_id, graduation_year, is_validated, is_demo)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
             [
                 $data['student_number'],
                 $data['first_name'],
@@ -168,6 +169,7 @@ final class Graduate
                 $data['birth_date'] ?? null,
                 $data['civil_status'] ?? null,
                 $data['address'] ?? null,
+                $data['job_position'] ?? null,
                 $data['municipality'] ?? null,
                 $data['province'] ?? null,
                 $data['program_id'],
@@ -186,7 +188,7 @@ final class Graduate
             'UPDATE graduates SET
                 student_number = ?, first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                 email = ?, contact_number = ?, sex = ?, birth_date = ?, civil_status = ?,
-                address = ?, municipality = ?, province = ?,
+                address = ?, job_position = ?, municipality = ?, province = ?,
                 program_id = ?, major = ?, batch_id = ?, graduation_year = ?, is_validated = ?
              WHERE id = ?',
             [
@@ -201,6 +203,7 @@ final class Graduate
                 $data['birth_date'] ?? null,
                 $data['civil_status'] ?? null,
                 $data['address'] ?? null,
+                $data['job_position'] ?? null,
                 $data['municipality'] ?? null,
                 $data['province'] ?? null,
                 $data['program_id'],
@@ -271,6 +274,11 @@ final class Graduate
             $major = null;
         }
 
+        $address = trim((string) ($row['address'] ?? $row['current_address'] ?? $row['home_address'] ?? '')) ?: null;
+        $jobPosition = trim((string) ($row['job_position'] ?? $row['position'] ?? $row['job_title'] ?? $row['job'] ?? '')) ?: null;
+        $municipality = trim((string) ($row['municipality'] ?? $row['city'] ?? $row['town'] ?? '')) ?: null;
+        $province = trim((string) ($row['province'] ?? '')) ?: null;
+
         return [
             'student_number'  => $studentNumber,
             'first_name'      => $first,
@@ -281,6 +289,10 @@ final class Graduate
             'contact_number'  => trim((string) ($row['contact_number'] ?? $row['mobile'] ?? '')) ?: null,
             'sex'             => in_array(strtolower((string) ($row['sex'] ?? '')), ['m', 'male'], true) ? 'Male'
                                : (in_array(strtolower((string) ($row['sex'] ?? '')), ['f', 'female'], true) ? 'Female' : null),
+            'address'         => $address,
+            'job_position'    => $jobPosition,
+            'municipality'    => $municipality,
+            'province'        => $province,
             'program_id'      => $programId,
             'major'           => $major,
             'batch_id'        => $batchId,

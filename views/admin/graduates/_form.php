@@ -131,8 +131,14 @@ $selectedBatch = (int) old('batch_id', $g['batch_id'] ?? 0);
                            value="<?= e(old('province', $g['province'] ?? '')) ?>">
                 </div>
                 <div class="md:col-span-2">
+                    <label class="label" for="job_position">Current Job Position / Title</label>
+                    <input type="text" name="job_position" id="job_position" class="input" maxlength="191"
+                           placeholder="e.g. Farm Supervisor, Agronomist, Agricultural Technician, etc."
+                           value="<?= e(old('job_position', $g['job_position'] ?? ($g['job_title'] ?? ''))) ?>">
+                </div>
+                <div class="md:col-span-2">
                     <label class="label" for="address">Address</label>
-                    <textarea name="address" id="address" rows="2" class="input"><?= e(old('address', $g['address'] ?? '')) ?></textarea>
+                    <textarea name="address" id="address" rows="2" class="input" placeholder="Barangay / Street, Municipality, Province"><?= e(old('address', $g['address'] ?? '')) ?></textarea>
                 </div>
             </div>
         </div>

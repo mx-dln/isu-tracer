@@ -100,6 +100,7 @@ $typeLabel = [
                     'Sex'                => $g['sex'] ?? null,
                     'Birth Date'         => $g['birth_date'] ?? null,
                     'Civil Status'       => $g['civil_status'] ?? null,
+                    'Job Position'       => $g['job_position'] ?? ($profile['job_title'] ?? null),
                     'Address'            => $g['address'] ?? null,
                     'Municipality'       => $g['municipality'] ?? null,
                     'Province'           => $g['province'] ?? null,

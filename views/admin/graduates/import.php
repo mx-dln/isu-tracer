@@ -52,6 +52,8 @@
                             'program_code'   => ['Yes', 'Must match BAT or DAT'],
                             'major'          => ['No', 'For BAT: Animal Production or Crop Production. Blank for DAT.'],
                             'batch_year'     => ['Yes', 'Must match an existing batch year'],
+                            'job_position'   => ['No', 'Current job position / title if employed (e.g. Farm Supervisor, Agronomist)'],
+                            'address'        => ['No', 'Full or residential address (e.g. San Fermin, Cauayan City, Isabela)'],
                         ];
                         ?>
                         <?php foreach ($cols as $col => [$req, $note]): ?>
