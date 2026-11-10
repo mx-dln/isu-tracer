@@ -77,6 +77,13 @@ class ProfileController extends Controller
             $payload[$field] = $value !== '' ? $value : null;
         }
 
+        if (($graduate['program_code'] ?? '') === 'BAT' && isset($data['major'])) {
+            $majorVal = trim((string) $data['major']);
+            if (in_array($majorVal, ['Animal Production', 'Crop Production'], true)) {
+                $payload['major'] = $majorVal;
+            }
+        }
+
         // Preserve admin-managed fields by merging over the existing row.
         // If phone was changed, reset phone_verified_at so it can be re-verified
         $oldPhone = trim((string) ($graduate['contact_number'] ?? ''));

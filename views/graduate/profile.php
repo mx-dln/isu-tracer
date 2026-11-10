@@ -173,8 +173,17 @@ $old = $old ?? [];
             </div>
             <div>
                 <label class="label" for="p-province">Province</label>
-                <input type="text" name="province" id="p-province" class="input" maxlength="100" value="<?= e(old('province', $graduate['province'] ?? '')) ?>">
+                <input type="text" name="province" id="p-province" class="input" maxlength="100" value="<?= e(old('province', $graduate['municipality'] ? ($graduate['province'] ?? '') : ($graduate['province'] ?? ''))) ?>">
             </div>
+            <?php if (($graduate['program_code'] ?? '') === 'BAT'): ?>
+                <div>
+                    <label class="label" for="p-major">Major</label>
+                    <select name="major" id="p-major" class="input">
+                        <option value="Crop Production" <?= old('major', $graduate['major'] ?? '') === 'Crop Production' ? 'selected' : '' ?>>Crop Production</option>
+                        <option value="Animal Production" <?= old('major', $graduate['major'] ?? '') === 'Animal Production' ? 'selected' : '' ?>>Animal Production</option>
+                    </select>
+                </div>
+            <?php endif; ?>
             <div class="sm:col-span-2">
                 <label class="label" for="p-job-position">Current Job Position / Title</label>
                 <input type="text" name="job_position" id="p-job-position" class="input" maxlength="191"

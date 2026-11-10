@@ -36,11 +36,19 @@ $batches = $batches ?? [];
             </div>
             <div>
                 <label for="program_id" class="label">Program <span class="text-red-600">*</span></label>
-                <select id="program_id" name="program_id" class="input" required>
+                <select id="program_id" name="program_id" class="input" required onchange="toggleRegMajorField()">
                     <option value="">Select program</option>
                     <?php foreach ($programs as $p): ?>
-                        <option value="<?= (int) $p['id'] ?>" <?= (int) old('program_id', 0) === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['code']) ?> &ndash; <?= e($p['name']) ?></option>
+                        <option value="<?= (int) $p['id'] ?>" data-code="<?= e($p['code']) ?>" <?= (int) old('program_id', 0) === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['code']) ?> &ndash; <?= e($p['name']) ?></option>
                     <?php endforeach; ?>
+                </select>
+            </div>
+            <div id="reg-major-container">
+                <label for="major" class="label">Major <span class="text-red-600">*</span></label>
+                <select id="major" name="major" class="input">
+                    <option value="">Select major</option>
+                    <option value="Crop Production" <?= old('major') === 'Crop Production' ? 'selected' : '' ?>>Crop Production</option>
+                    <option value="Animal Production" <?= old('major') === 'Animal Production' ? 'selected' : '' ?>>Animal Production</option>
                 </select>
             </div>
             <div>
@@ -52,7 +60,7 @@ $batches = $batches ?? [];
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="sm:col-span-2">
+            <div>
                 <label for="employment_status" class="label">Employment Status <span class="text-red-600">*</span></label>
                 <select id="employment_status" name="employment_status" class="input" required>
                     <option value="unemployed" <?= old('employment_status', 'unemployed') === 'unemployed' ? 'selected' : '' ?>>Unemployed</option>
@@ -92,3 +100,29 @@ $batches = $batches ?? [];
         <a href="<?= url('login') ?>" class="text-brand-700 hover:text-brand-800 font-semibold">Sign in</a>
     </p>
 </div>
+<script>
+function toggleRegMajorField() {
+    var prog = document.getElementById('program_id');
+    var selectedOpt = prog ? prog.options[prog.selectedIndex] : null;
+    var code = selectedOpt ? selectedOpt.getAttribute('data-code') : '';
+    var container = document.getElementById('reg-major-container');
+    var majorSelect = document.getElementById('major');
+    if (!container || !majorSelect) return;
+    if (code === 'BAT') {
+        container.style.display = 'block';
+        majorSelect.required = true;
+    } else if (code !== '') {
+        container.style.display = 'none';
+        majorSelect.required = false;
+        majorSelect.value = '';
+    } else {
+        container.style.display = 'block';
+        majorSelect.required = false;
+    }
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', toggleRegMajorField);
+} else {
+    toggleRegMajorField();
+}
+</script>

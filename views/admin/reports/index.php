@@ -4,6 +4,7 @@ $types = $types ?? [];
 $reports = $reports ?? [];
 $filters = $filters ?? [];
 $programs = $filters['programs'] ?? [];
+$majors = $filters['majors'] ?? ['Crop Production', 'Animal Production'];
 $batches = $filters['batches'] ?? [];
 $sectors = $filters['sectors'] ?? [];
 $statusLabel = [
@@ -24,7 +25,7 @@ $statusLabel = [
     <div class="card">
         <div class="card-header"><h3 class="font-semibold text-ink-800">Generate Report</h3></div>
         <div class="card-body">
-            <form method="POST" action="<?= url('admin/reports/generate') ?>" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+            <form method="POST" action="<?= url('admin/reports/generate') ?>" class="grid grid-cols-1 md:grid-cols-7 gap-3 items-end">
                 <?= csrf_field() ?>
                 <div>
                     <label class="label" for="r-type">Report Type</label>
@@ -48,6 +49,15 @@ $statusLabel = [
                         <option value="">All Programs</option>
                         <?php foreach ($programs as $p): ?>
                             <option value="<?= (int) $p['id'] ?>"><?= e($p['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="label" for="r-major">Major (optional)</label>
+                    <select name="major" id="r-major" class="input">
+                        <option value="">All Majors</option>
+                        <?php foreach ($majors as $m): ?>
+                            <option value="<?= e($m) ?>"><?= e($m) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -78,7 +88,7 @@ $statusLabel = [
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="md:col-span-6 flex justify-end">
+                <div class="md:col-span-7 flex justify-end">
                     <button type="submit" class="btn-primary"><i data-lucide="file-down" class="w-4 h-4"></i> Generate</button>
                 </div>
             </form>

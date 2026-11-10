@@ -11,8 +11,32 @@ use App\Core\Database;
  */
 final class Graduate
 {
+    public static function ensureBatMajors(): void
+    {
+        try {
+            Database::run(
+                "UPDATE graduates g
+                 JOIN programs p ON p.id = g.program_id
+                 LEFT JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.is_current = 1 AND ep.deleted_at IS NULL
+                 SET g.major = CASE
+                     WHEN LOWER(COALESCE(ep.employer, '')) LIKE '%new hope%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%animal%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%livestock%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%poultry%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%swine%'
+                     THEN 'Animal Production'
+                     ELSE 'Crop Production'
+                 END
+                 WHERE p.code = 'BAT' AND (g.major IS NULL OR TRIM(g.major) = '')"
+            );
+        } catch (\Throwable $e) {
+            // Ignore if schema does not yet have all columns
+        }
+    }
+
     public static function find(int $id): ?array
     {
+        self::ensureBatMajors();
         return Database::fetch(
             'SELECT g.*, p.code AS program_code, p.name AS program_name,
                     b.year AS batch_year, b.label AS batch_label,
@@ -41,6 +65,7 @@ final class Graduate
      */
     public static function paginate(array $filters = [], int $page = 1, int $perPage = 15): array
     {
+        self::ensureBatMajors();
         $where = 'WHERE g.deleted_at IS NULL';
         $params = [];
 
@@ -272,6 +297,15 @@ final class Graduate
         $major = trim((string) ($row['major'] ?? ''));
         if ($major === '' || strcasecmp($major, 'n/a') === 0 || strcasecmp($major, 'none') === 0) {
             $major = null;
+        } elseif (stripos($major, 'animal') !== false) {
+            $major = 'Animal Production';
+        } elseif (stripos($major, 'crop') !== false) {
+            $major = 'Crop Production';
+        }
+
+        $batId = $programMap['BAT'] ?? null;
+        if ($batId !== null && $programId === $batId && $major === null) {
+            $major = 'Crop Production';
         }
 
         $address = trim((string) ($row['address'] ?? $row['current_address'] ?? $row['home_address'] ?? '')) ?: null;

@@ -36,6 +36,8 @@ final class ReportService
      */
     public function build(string $type, array $filters): array
     {
+        $this->ensureBatMajors();
+
         switch ($type) {
             case 'graduates':
                 return $this->graduates($filters);
@@ -52,6 +54,32 @@ final class ReportService
         }
     }
 
+    /**
+     * Ensure BAT graduates without a major in the database have a valid major assigned.
+     */
+    private function ensureBatMajors(): void
+    {
+        try {
+            Database::run(
+                "UPDATE graduates g
+                 JOIN programs p ON p.id = g.program_id
+                 LEFT JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.is_current = 1 AND ep.deleted_at IS NULL
+                 SET g.major = CASE
+                     WHEN LOWER(COALESCE(ep.employer, '')) LIKE '%new hope%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%animal%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%livestock%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%poultry%'
+                       OR LOWER(COALESCE(ep.job_title, g.job_position, '')) LIKE '%swine%'
+                     THEN 'Animal Production'
+                     ELSE 'Crop Production'
+                 END
+                 WHERE p.code = 'BAT' AND (g.major IS NULL OR TRIM(g.major) = '')"
+            );
+        } catch (\Throwable $e) {
+            // Ignore if schema does not yet have all columns
+        }
+    }
+
     private function graduates(array $filters): array
     {
         $where = ['g.deleted_at IS NULL'];
@@ -59,6 +87,10 @@ final class ReportService
         if (!empty($filters['program_id'])) {
             $where[] = 'g.program_id = ?';
             $params[] = (int) $filters['program_id'];
+        }
+        if (!empty($filters['major'])) {
+            $where[] = 'g.major = ?';
+            $params[] = $filters['major'];
         }
         if (!empty($filters['batch_id'])) {
             $where[] = 'g.batch_id = ?';
@@ -68,21 +100,27 @@ final class ReportService
             $where[] = 'ep.status = ?';
             $params[] = $filters['status'];
         }
+        if (!empty($filters['sector_id'])) {
+            $where[] = 'ep.sector_id = ?';
+            $params[] = (int) $filters['sector_id'];
+        }
 
         $rows = Database::fetchAll(
-            'SELECT g.student_number, g.last_name, g.first_name, g.middle_name, g.suffix,
+            "SELECT g.student_number, g.last_name, g.first_name, g.middle_name, g.suffix,
                     g.email, g.contact_number, g.sex, g.graduation_year, g.major,
                     p.code AS program, b.year AS batch,
-                    ep.status AS employment_status, ep.job_title, ep.employer,
+                    ep.status AS employment_status,
+                    COALESCE(NULLIF(ep.job_title, ''), NULLIF(g.job_position, '')) AS job_title,
+                    ep.employer,
                     ep.proof_uploaded_at,
-                    es.name AS sector
+                    COALESCE(es.name, ep.sector_other) AS sector
              FROM graduates g
              JOIN programs p ON p.id = g.program_id
              JOIN batches b ON b.id = g.batch_id
              LEFT JOIN employment_profiles ep ON ep.graduate_id = g.id AND ep.is_current = 1 AND ep.deleted_at IS NULL
              LEFT JOIN employment_sectors es ON es.id = ep.sector_id
-             WHERE ' . implode(' AND ', $where) . '
-             ORDER BY g.student_number',
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY g.student_number",
             $params
         );
 
@@ -92,11 +130,12 @@ final class ReportService
             // Printable PDF columns (essential, readable, no overflow):
             'pdf_headers' => ['Student #', 'Name', 'Program', 'Major', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector'],
             'pdf_columns' => function (array $r): array {
+                $major = !empty($r['major']) ? $r['major'] : (($r['program'] ?? '') === 'BAT' ? 'Crop Production' : '—');
                 return [
                     $r['student_number'],
                     trim(($r['last_name'] ?? '') . ', ' . ($r['first_name'] ?? '') . ' ' . ($r['middle_name'] ? mb_substr($r['middle_name'], 0, 1) . '.' : '')),
                     $r['program'],
-                    $r['major'] ?? '—',
+                    $major,
                     $r['batch'],
                     ucwords(str_replace('_', ' ', (string) ($r['employment_status'] ?? 'no_profile'))),
                     $r['job_title'] ?? '—',
@@ -107,6 +146,7 @@ final class ReportService
             // Full headers & columns for Excel / CSV raw export:
             'headers' => ['Student #', 'Name', 'Email', 'Contact', 'Sex', 'Program', 'Major', 'Batch', 'Grad Year', 'Status', 'Job Title', 'Employer', 'Sector', 'Proof Date'],
             'columns' => function (array $r): array {
+                $major = !empty($r['major']) ? $r['major'] : (($r['program'] ?? '') === 'BAT' ? 'Crop Production' : '—');
                 return [
                     $r['student_number'],
                     trim(($r['last_name'] ?? '') . ', ' . ($r['first_name'] ?? '') . ' ' . ($r['middle_name'] ?? '')),
@@ -114,7 +154,7 @@ final class ReportService
                     $r['contact_number'] ?? '',
                     $r['sex'] ?? '',
                     $r['program'],
-                    $r['major'] ?? '—',
+                    $major,
                     $r['batch'],
                     $r['graduation_year'],
                     ucwords(str_replace('_', ' ', (string) ($r['employment_status'] ?? 'no_profile'))),
@@ -176,6 +216,10 @@ final class ReportService
             $where[] = 'g.program_id = ?';
             $params[] = (int) $filters['program_id'];
         }
+        if (!empty($filters['major'])) {
+            $where[] = 'g.major = ?';
+            $params[] = $filters['major'];
+        }
         if (!empty($filters['batch_id'])) {
             $where[] = 'g.batch_id = ?';
             $params[] = (int) $filters['batch_id'];
@@ -190,8 +234,9 @@ final class ReportService
         }
 
         $detailRows = Database::fetchAll(
-            "SELECT g.student_number, g.last_name, g.first_name, p.code AS program, b.year AS batch,
-                    ep.status, ep.job_title, ep.employer, COALESCE(es.name, ep.sector_other) AS sector,
+            "SELECT g.student_number, g.last_name, g.first_name, p.code AS program, g.major, b.year AS batch,
+                    ep.status, COALESCE(NULLIF(ep.job_title, ''), NULLIF(g.job_position, '')) AS job_title,
+                    ep.employer, COALESCE(es.name, ep.sector_other) AS sector,
                     ep.first_employment_date,
                     TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(g.graduation_year, '-06-15'), '%Y-%m-%d'), ep.first_employment_date) AS first_job_months,
                     CASE WHEN ep.proof_image_path IS NOT NULL OR ep.proof_image_url IS NOT NULL THEN 'Yes' ELSE 'No' END AS has_proof
@@ -215,12 +260,14 @@ final class ReportService
             'sectors' => ['headers' => $sectorHeaders, 'rows' => $sectorRows],
             'time_to_first_job' => ['headers' => ['Time to First Job', 'Graduates', 'Percent'], 'rows' => $timeRows],
             'details' => [
-                'headers' => ['Student #', 'Name', 'Program', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector', 'First Employment Date', 'Time to First Job (Months)', 'Proof Submitted'],
+                'headers' => ['Student #', 'Name', 'Program', 'Major', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector', 'First Employment Date', 'Time to First Job (Months)', 'Proof Submitted'],
                 'rows' => array_map(static function (array $row) use ($labels): array {
+                    $major = !empty($row['major']) ? $row['major'] : (($row['program'] ?? '') === 'BAT' ? 'Crop Production' : '—');
                     return [
                         $row['student_number'],
                         trim(($row['last_name'] ?? '') . ', ' . ($row['first_name'] ?? '')),
                         $row['program'],
+                        $major,
                         $row['batch'],
                         $labels[$row['status']] ?? ucwords(str_replace('_', ' ', (string) $row['status'])),
                         $row['job_title'] ?? '',
@@ -233,12 +280,14 @@ final class ReportService
                 }, $detailRows),
             ],
             'pdf_details' => [
-                'headers' => ['Student #', 'Name', 'Program', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector'],
+                'headers' => ['Student #', 'Name', 'Program', 'Major', 'Batch', 'Status', 'Job Title', 'Employer', 'Sector'],
                 'rows' => array_map(static function (array $row) use ($labels): array {
+                    $major = !empty($row['major']) ? $row['major'] : (($row['program'] ?? '') === 'BAT' ? 'Crop Production' : '—');
                     return [
                         $row['student_number'],
                         trim(($row['last_name'] ?? '') . ', ' . ($row['first_name'] ?? '')),
                         $row['program'],
+                        $major,
                         $row['batch'],
                         $labels[$row['status']] ?? ucwords(str_replace('_', ' ', (string) $row['status'])),
                         $row['job_title'] ?? '—',
@@ -332,7 +381,6 @@ final class ReportService
      */
     public function generate(string $type, array $filters, string $format): array
     {
-        $dataset = $this->build($type, $filters);
         $format = strtolower($format);
 
         $exportsDir = (string) config('app.paths.storage_exports');
@@ -343,6 +391,24 @@ final class ReportService
         $slug = $type;
         $filename = 'report-' . $slug . '-' . date('Ymd-His') . '.' . $this->extension($format);
         $fullPath = $exportsDir . '/' . $filename;
+
+        $this->generateToPath($type, $filters, $format, $fullPath);
+
+        return ['path' => $filename, 'size' => (int) filesize($fullPath)];
+    }
+
+    /**
+     * Render a report directly to a specific file path.
+     */
+    public function generateToPath(string $type, array $filters, string $format, string $fullPath): void
+    {
+        $dataset = $this->build($type, $filters);
+        $format = strtolower($format);
+
+        $dir = dirname($fullPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
 
         switch ($format) {
             case 'pdf':
@@ -357,8 +423,6 @@ final class ReportService
             default:
                 abort(400, 'Unsupported report format.');
         }
-
-        return ['path' => $filename, 'size' => (int) filesize($fullPath)];
     }
 
     private function extension(string $format): string

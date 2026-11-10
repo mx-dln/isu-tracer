@@ -37,6 +37,10 @@ final class AnalyticsService
             $where[] = 'g.program_id = ?';
             $params[] = $filters['program_id'];
         }
+        if (!empty($filters['major'])) {
+            $where[] = 'g.major = ?';
+            $params[] = $filters['major'];
+        }
         if (!empty($filters['status'])) {
             $where[] = 'ep.status = ?';
             $params[] = $filters['status'];
@@ -468,6 +472,7 @@ final class AnalyticsService
     {
         return [
             'programs' => Database::fetchAll('SELECT id, code, name FROM programs WHERE deleted_at IS NULL ORDER BY name'),
+            'majors'   => ['Crop Production', 'Animal Production'],
             'batches'  => Database::fetchAll('SELECT id, year, label FROM batches WHERE deleted_at IS NULL ORDER BY year DESC'),
             'sectors'  => Database::fetchAll('SELECT id, name FROM employment_sectors WHERE deleted_at IS NULL ORDER BY name'),
         ];

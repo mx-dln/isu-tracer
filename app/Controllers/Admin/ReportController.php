@@ -51,6 +51,7 @@ class ReportController extends Controller
 
         $filters = [
             'program_id' => $request->input('program_id') !== '' && $request->input('program_id') !== null ? (int) $request->input('program_id') : null,
+            'major'      => trim((string) $request->input('major')),
             'batch_id'   => $request->input('batch_id') !== '' && $request->input('batch_id') !== null ? (int) $request->input('batch_id') : null,
             'status'     => trim((string) $request->input('status')),
             'sector_id'  => $request->input('sector_id') !== '' && $request->input('sector_id') !== null ? (int) $request->input('sector_id') : null,
@@ -91,7 +92,14 @@ class ReportController extends Controller
             abort(404, 'Report not found.');
         }
 
-        $file = (string) config('app.paths.storage_exports') . '/' . $report['file_path'];
+        $file = (string) config('app.paths.storage_exports') . '/' . basename((string) $report['file_path']);
+        try {
+            $savedFilters = !empty($report['filters']) ? (json_decode((string) $report['filters'], true) ?: []) : [];
+            (new ReportService())->generateToPath((string) $report['type'], $savedFilters, (string) $report['format'], $file);
+        } catch (\Throwable $e) {
+            \App\Core\Logger::error('Report refresh failed: ' . $e->getMessage());
+        }
+
         if (!is_file($file)) {
             abort(404, 'Report file no longer exists.');
         }

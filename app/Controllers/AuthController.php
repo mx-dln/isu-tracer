@@ -143,6 +143,15 @@ class AuthController extends Controller
         $validator->validateOrFail('register');
 
         try {
+            $prog = Database::fetch('SELECT code FROM programs WHERE id = ?', [(int) $data['program_id']]);
+            if ($prog && $prog['code'] === 'BAT') {
+                $data['major'] = in_array($data['major'] ?? '', ['Animal Production', 'Crop Production'], true)
+                    ? $data['major']
+                    : 'Crop Production';
+            } else {
+                $data['major'] = null;
+            }
+
             $graduateId = Database::transaction(function () use ($data) {
                 // Try to link an existing graduate record (imported by admin).
                 $existing = Database::fetch(
@@ -153,7 +162,7 @@ class AuthController extends Controller
                 if ($existing) {
                     $graduateId = (int) $existing['id'];
                     Database::run(
-                        'UPDATE graduates SET email = ?, first_name = ?, middle_name = ?, last_name = ?, contact_number = ?, address = COALESCE(?, address), job_position = COALESCE(?, job_position) WHERE id = ?',
+                        'UPDATE graduates SET email = ?, first_name = ?, middle_name = ?, last_name = ?, contact_number = ?, address = COALESCE(?, address), job_position = COALESCE(?, job_position), major = COALESCE(?, major) WHERE id = ?',
                         [
                             $data['email'],
                             trim((string) $data['first_name']),
@@ -162,13 +171,14 @@ class AuthController extends Controller
                             $data['contact_number'] ?? null,
                             !empty($data['address']) ? trim((string) $data['address']) : null,
                             !empty($data['job_position']) ? trim((string) $data['job_position']) : null,
+                            $data['major'],
                             $graduateId,
                         ]
                     );
                 } else {
                     Database::run(
-                        'INSERT INTO graduates (student_number, first_name, middle_name, last_name, email, contact_number, address, job_position, program_id, batch_id, graduation_year, is_validated, is_demo)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
+                        'INSERT INTO graduates (student_number, first_name, middle_name, last_name, email, contact_number, address, job_position, program_id, major, batch_id, graduation_year, is_validated, is_demo)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
                         [
                             $data['student_number'],
                             trim((string) $data['first_name']),
@@ -179,6 +189,7 @@ class AuthController extends Controller
                             !empty($data['address']) ? trim((string) $data['address']) : null,
                             !empty($data['job_position']) ? trim((string) $data['job_position']) : null,
                             $data['program_id'],
+                            $data['major'],
                             $data['batch_id'],
                             (int) Database::fetch('SELECT year FROM batches WHERE id = ?', [$data['batch_id']])['year'],
                         ]
