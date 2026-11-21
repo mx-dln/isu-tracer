@@ -14,30 +14,30 @@ $old = $old ?? [];
             </div>
         </div>
         <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
+            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
                 <p class="text-xs text-ink-500">Student Number</p>
-                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['student_number'] ?? '—') ?></p>
+                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['student_number'] ?? '—') ?></p>
             </div>
-            <div>
+            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
                 <p class="text-xs text-ink-500">Program</p>
-                <p class="text-sm font-semibold text-ink-900">
+                <p class="text-sm font-semibold text-ink-900 mt-0.5">
                     <?= e($graduate['program_code'] ?? ($graduate['program_name'] ?? '—')) ?>
                     <?php if (!empty($graduate['major'])): ?>
                         <span class="block text-xs font-normal text-ink-500">Major: <?= e($graduate['major']) ?></span>
                     <?php endif; ?>
                 </p>
             </div>
-            <div>
+            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
                 <p class="text-xs text-ink-500">Graduation Year</p>
-                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['graduation_year'] ?? '—') ?></p>
+                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['graduation_year'] ?? '—') ?></p>
             </div>
-            <div>
+            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
                 <p class="text-xs text-ink-500">Job Position</p>
-                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['job_position'] ?: 'Not indicated / Unemployed') ?></p>
+                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['job_position'] ?: 'Not indicated / Unemployed') ?></p>
             </div>
-            <div class="sm:col-span-2">
+            <div class="sm:col-span-2 p-3 rounded-xl border border-brand-200 bg-brand-50/60">
                 <p class="text-xs text-ink-500">Address</p>
-                <p class="text-sm font-semibold text-ink-900"><?= e($graduate['address'] ?: 'Not indicated') ?></p>
+                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['address'] ?: 'Not indicated') ?></p>
             </div>
             <div class="sm:col-span-3 pt-3 border-t border-ink-100 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
