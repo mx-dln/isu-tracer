@@ -24,48 +24,51 @@ class DashboardController extends Controller
                     g.program_id, g.major, g.batch_id, g.graduation_year, g.is_validated, g.phone_verified_at, g.validated_at, g.contact_number,
                     p.name AS program_name, b.year AS batch_year
              FROM users u
-             JOIN graduates g ON g.id = u.graduate_id
+             LEFT JOIN graduates g ON g.id = u.graduate_id
              LEFT JOIN programs p ON p.id = g.program_id
              LEFT JOIN batches b ON b.id = g.batch_id
              WHERE u.id = ?',
             [$userId]
-        );
+        ) ?: [];
 
-        $employment = Database::fetch(
+        $graduateId = (int) ($user['graduate_id'] ?? 0);
+        $gradYear = (int) ($user['graduation_year'] ?? 0);
+
+        $employment = $graduateId > 0 ? Database::fetch(
             'SELECT ep.*, es.name AS sector_name
              FROM employment_profiles ep
              LEFT JOIN employment_sectors es ON es.id = ep.sector_id
              WHERE ep.graduate_id = ? AND ep.deleted_at IS NULL AND ep.is_current = 1',
-            [$user['graduate_id']]
-        );
+            [$graduateId]
+        ) : null;
 
-        $activeSurvey = Database::fetch(
+        $activeSurvey = $gradYear > 0 ? Database::fetch(
             'SELECT s.* FROM surveys s
              WHERE s.status = "active" AND s.deleted_at IS NULL
                AND s.tracer_year = ?
              ORDER BY s.created_at DESC LIMIT 1',
-            [(int) $user['graduation_year']]
-        );
+            [$gradYear]
+        ) : null;
 
         $submitted = false;
-        if ($activeSurvey) {
+        if ($activeSurvey && $graduateId > 0) {
             $submitted = (bool) Database::fetch(
                 'SELECT id FROM survey_responses WHERE survey_id = ? AND graduate_id = ?',
-                [$activeSurvey['id'], $user['graduate_id']]
+                [$activeSurvey['id'], $graduateId]
             );
         }
 
-        $competencyCount = (int) Database::fetch(
+        $competencyCount = $graduateId > 0 ? (int) Database::fetch(
             'SELECT COUNT(*) AS c FROM competency_responses WHERE graduate_id = ?',
-            [$user['graduate_id']]
-        )['c'];
+            [$graduateId]
+        )['c'] : 0;
         $totalCompetencies = (int) Database::fetch(
             'SELECT COUNT(*) AS c FROM competencies WHERE deleted_at IS NULL AND is_active = 1'
         )['c'];
 
-        $curriculumSubmitted = (bool) Database::fetch(
+        $curriculumSubmitted = $graduateId > 0 && (bool) Database::fetch(
             'SELECT id FROM curriculum_feedback WHERE graduate_id = ? LIMIT 1',
-            [$user['graduate_id']]
+            [$graduateId]
         );
 
         $unreadCount = (int) Database::fetch(

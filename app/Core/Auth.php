@@ -86,6 +86,7 @@ final class Auth
                     [$id]
                 );
                 if ($row) {
+                    self::ensureGraduateRecord($row);
                     self::$user = (object) $row;
                 }
             }
@@ -169,7 +170,88 @@ final class Auth
 
     private static function setUser(array $row): void
     {
+        self::ensureGraduateRecord($row);
         self::$user = (object) $row;
         self::$resolved = true;
+    }
+
+    /**
+     * Ensure a graduate-role user always has a valid, non-deleted linked record in `graduates`.
+     */
+    private static function ensureGraduateRecord(array &$row): void
+    {
+        if (($row['role_slug'] ?? '') !== 'graduate') {
+            return;
+        }
+
+        $userId = (int) ($row['id'] ?? 0);
+        if ($userId <= 0) {
+            return;
+        }
+
+        $gradId = !empty($row['graduate_id']) ? (int) $row['graduate_id'] : 0;
+        if ($gradId > 0) {
+            $existing = Database::fetch('SELECT id, deleted_at FROM graduates WHERE id = ?', [$gradId]);
+            if ($existing) {
+                if ($existing['deleted_at'] !== null) {
+                    Database::run('UPDATE graduates SET deleted_at = NULL WHERE id = ?', [$gradId]);
+                }
+                return;
+            }
+        }
+
+        // Try matching by user_id, email, or full name in `graduates`
+        $email = trim((string) ($row['email'] ?? ''));
+        $fullName = trim((string) ($row['name'] ?? ''));
+
+        $match = Database::fetch(
+            'SELECT id, deleted_at FROM graduates
+             WHERE user_id = ?
+                OR (? <> "" AND LOWER(TRIM(email)) = LOWER(?))
+                OR (? <> "" AND LOWER(TRIM(CONCAT(first_name, " ", last_name))) = LOWER(?))
+             ORDER BY (user_id = ?) DESC, (deleted_at IS NULL) DESC, id DESC
+             LIMIT 1',
+            [$userId, $email, $email, $fullName, $fullName, $userId]
+        );
+
+        if ($match) {
+            $linkedId = (int) $match['id'];
+            Database::run('UPDATE graduates SET user_id = ?, deleted_at = NULL WHERE id = ?', [$userId, $linkedId]);
+            Database::run('UPDATE users SET graduate_id = ? WHERE id = ?', [$linkedId, $userId]);
+            $row['graduate_id'] = $linkedId;
+            return;
+        }
+
+        // Auto-create a graduate profile record if none exists for this user account
+        $parts = preg_split('/\s+/', $fullName ?: 'Graduate User', 2);
+        $firstName = $parts[0] ?? 'Graduate';
+        $lastName = $parts[1] ?? 'User';
+
+        $prog = Database::fetch('SELECT id, code FROM programs WHERE deleted_at IS NULL ORDER BY (code = "BAT") DESC, id ASC LIMIT 1');
+        $batch = Database::fetch('SELECT id, year FROM batches WHERE deleted_at IS NULL ORDER BY year DESC, id DESC LIMIT 1');
+
+        if (!$prog || !$batch) {
+            return;
+        }
+
+        $programId = (int) $prog['id'];
+        $major = ($prog['code'] ?? '') === 'BAT' ? 'Crop Production' : null;
+        $batchId = (int) $batch['id'];
+        $batchYear = (int) $batch['year'];
+        $studentNo = sprintf('%d-%04d', $batchYear, $userId);
+
+        // Avoid duplicate student_number collision
+        if (Database::fetch('SELECT id FROM graduates WHERE student_number = ?', [$studentNo])) {
+            $studentNo = sprintf('%d-U%04d', $batchYear, $userId);
+        }
+
+        Database::run(
+            'INSERT INTO graduates (user_id, student_number, first_name, last_name, email, program_id, major, batch_id, graduation_year, is_validated, is_demo)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
+            [$userId, $studentNo, $firstName, $lastName, $email !== '' ? $email : null, $programId, $major, $batchId, $batchYear]
+        );
+        $newGradId = (int) Database::lastInsertId();
+        Database::run('UPDATE users SET graduate_id = ? WHERE id = ?', [$newGradId, $userId]);
+        $row['graduate_id'] = $newGradId;
     }
 }
