@@ -13,47 +13,50 @@ $old = $old ?? [];
                 <p class="text-xs text-ink-500 mt-0.5">Update your contact information. Academic details (student number, program, batch) are maintained by the institute.</p>
             </div>
         </div>
-        <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
-                <p class="text-xs text-ink-500">Student Number</p>
-                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['student_number'] ?? '—') ?></p>
+        <div class="card-body space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
+                    <p class="text-xs text-ink-500">Student Number</p>
+                    <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['student_number'] ?? '—') ?></p>
+                </div>
+                <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
+                    <p class="text-xs text-ink-500">Program</p>
+                    <p class="text-sm font-semibold text-ink-900 mt-0.5">
+                        <?= e($graduate['program_code'] ?? ($graduate['program_name'] ?? '—')) ?>
+                        <?php if (!empty($graduate['major'])): ?>
+                            <span class="block text-xs font-normal text-ink-500">Major: <?= e($graduate['major']) ?></span>
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
+                    <p class="text-xs text-ink-500">Graduation Year</p>
+                    <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['graduation_year'] ?? '—') ?></p>
+                </div>
+                <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
+                    <p class="text-xs text-ink-500">Job Position</p>
+                    <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['job_position'] ?: 'Not indicated / Unemployed') ?></p>
+                </div>
+                <div class="sm:col-span-2 p-3 rounded-xl border border-brand-200 bg-brand-50/60">
+                    <p class="text-xs text-ink-500">Address</p>
+                    <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['address'] ?: 'Not indicated') ?></p>
+                </div>
             </div>
-            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
-                <p class="text-xs text-ink-500">Program</p>
-                <p class="text-sm font-semibold text-ink-900 mt-0.5">
-                    <?= e($graduate['program_code'] ?? ($graduate['program_name'] ?? '—')) ?>
-                    <?php if (!empty($graduate['major'])): ?>
-                        <span class="block text-xs font-normal text-ink-500">Major: <?= e($graduate['major']) ?></span>
-                    <?php endif; ?>
-                </p>
-            </div>
-            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
-                <p class="text-xs text-ink-500">Graduation Year</p>
-                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['graduation_year'] ?? '—') ?></p>
-            </div>
-            <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60">
-                <p class="text-xs text-ink-500">Job Position</p>
-                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['job_position'] ?: 'Not indicated / Unemployed') ?></p>
-            </div>
-            <div class="sm:col-span-2 p-3 rounded-xl border border-brand-200 bg-brand-50/60">
-                <p class="text-xs text-ink-500">Address</p>
-                <p class="text-sm font-semibold text-ink-900 mt-0.5"><?= e($graduate['address'] ?: 'Not indicated') ?></p>
-            </div>
-            <div class="sm:col-span-3 pt-3 border-t border-ink-100 flex flex-wrap items-center justify-between gap-2">
+
+            <div class="pt-3 border-t border-ink-100 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs text-ink-500">Validation Status:</span>
+                    <span class="text-xs font-medium text-ink-500 whitespace-nowrap">Validation Status:</span>
                     <?php if (!empty($graduate['is_validated'])): ?>
-                        <span class="badge-green"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i> Validated Graduate Record</span>
+                        <span class="badge-green whitespace-nowrap"><i data-lucide="badge-check" class="w-3.5 h-3.5 shrink-0"></i> Validated Graduate Record</span>
                     <?php else: ?>
-                        <span class="badge-amber"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Pending Administrative Validation</span>
+                        <span class="badge-amber whitespace-nowrap"><i data-lucide="clock" class="w-3.5 h-3.5 shrink-0"></i> Pending Administrative Validation</span>
                     <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs text-ink-500">Phone Verification:</span>
+                    <span class="text-xs font-medium text-ink-500 whitespace-nowrap">Phone Verification:</span>
                     <?php if (!empty($graduate['phone_verified_at'])): ?>
-                        <span class="badge-green"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Verified via OTP</span>
+                        <span class="badge-green whitespace-nowrap"><i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0"></i> Verified via OTP</span>
                     <?php else: ?>
-                        <span class="badge-gray"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Unverified</span>
+                        <span class="badge-gray whitespace-nowrap"><i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i> Unverified</span>
                     <?php endif; ?>
                 </div>
             </div>

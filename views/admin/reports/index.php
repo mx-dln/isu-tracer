@@ -25,71 +25,73 @@ $statusLabel = [
     <div class="card">
         <div class="card-header"><h3 class="font-semibold text-ink-800">Generate Report</h3></div>
         <div class="card-body">
-            <form method="POST" action="<?= url('admin/reports/generate') ?>" class="grid grid-cols-1 md:grid-cols-7 gap-3 items-end">
+            <form method="POST" action="<?= url('admin/reports/generate') ?>" class="space-y-4">
                 <?= csrf_field() ?>
-                <div>
-                    <label class="label" for="r-type">Report Type</label>
-                    <select name="type" id="r-type" class="input" onchange="updateFormats(this.value)">
-                        <?php foreach ($types as $key => $meta): ?>
-                            <option value="<?= e($key) ?>"><?= e($meta['label']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="label" for="r-format">Format</label>
-                    <select name="format" id="r-format" class="input">
-                        <option value="pdf">PDF</option>
-                        <option value="excel">Excel</option>
-                        <option value="csv">CSV</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="label" for="r-program">Program (optional)</label>
-                    <select name="program_id" id="r-program" class="input">
-                        <option value="">All Programs</option>
-                        <?php foreach ($programs as $p): ?>
-                            <option value="<?= (int) $p['id'] ?>"><?= e($p['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="label" for="r-major">Major (optional)</label>
-                    <select name="major" id="r-major" class="input">
-                        <option value="">All Majors</option>
-                        <?php foreach ($majors as $m): ?>
-                            <option value="<?= e($m) ?>"><?= e($m) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="label" for="r-batch">Batch (optional)</label>
-                    <select name="batch_id" id="r-batch" class="input">
-                        <option value="">All Batches</option>
-                        <?php foreach ($batches as $b): ?>
-                            <option value="<?= (int) $b['id'] ?>"><?= e($b['label'] ?? $b['year']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="label" for="r-status">Employment Status</label>
-                    <select name="status" id="r-status" class="input">
-                        <option value="">All Statuses</option>
-                        <?php foreach ($statusLabel as $key => $label): ?>
-                            <option value="<?= e($key) ?>"><?= e($label) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="label" for="r-sector">Employment Sector</label>
-                    <select name="sector_id" id="r-sector" class="input">
-                        <option value="">All Sectors</option>
-                        <?php foreach ($sectors as $s): ?>
-                            <option value="<?= (int) $s['id'] ?>"><?= e($s['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="md:col-span-7 flex justify-end">
-                    <button type="submit" class="btn-primary"><i data-lucide="file-down" class="w-4 h-4"></i> Generate</button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                    <div>
+                        <label class="label" for="r-type">Report Type</label>
+                        <select name="type" id="r-type" class="input" onchange="updateFormats(this.value)">
+                            <?php foreach ($types as $key => $meta): ?>
+                                <option value="<?= e($key) ?>"><?= e($meta['label']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="r-format">Format</label>
+                        <select name="format" id="r-format" class="input">
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="r-program">Program (optional)</label>
+                        <select name="program_id" id="r-program" class="input">
+                            <option value="">All Programs</option>
+                            <?php foreach ($programs as $p): ?>
+                                <option value="<?= (int) $p['id'] ?>"><?= e($p['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="r-major">Major (optional)</label>
+                        <select name="major" id="r-major" class="input">
+                            <option value="">All Majors</option>
+                            <?php foreach ($majors as $m): ?>
+                                <option value="<?= e($m) ?>"><?= e($m) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="r-batch">Batch (optional)</label>
+                        <select name="batch_id" id="r-batch" class="input">
+                            <option value="">All Batches</option>
+                            <?php foreach ($batches as $b): ?>
+                                <option value="<?= (int) $b['id'] ?>"><?= e($b['label'] ?? $b['year']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="r-status">Employment Status</label>
+                        <select name="status" id="r-status" class="input">
+                            <option value="">All Statuses</option>
+                            <?php foreach ($statusLabel as $key => $label): ?>
+                                <option value="<?= e($key) ?>"><?= e($label) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="r-sector">Employment Sector</label>
+                        <select name="sector_id" id="r-sector" class="input">
+                            <option value="">All Sectors</option>
+                            <?php foreach ($sectors as $s): ?>
+                                <option value="<?= (int) $s['id'] ?>"><?= e($s['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="btn-primary w-full"><i data-lucide="file-down" class="w-4 h-4"></i> Generate</button>
+                    </div>
                 </div>
             </form>
         </div>
