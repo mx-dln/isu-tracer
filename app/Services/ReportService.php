@@ -639,7 +639,7 @@ final class ReportService
             h3 { font-size: 9.5pt; color: #166534; margin: 14px 0 6px 0; border-bottom: 1.5px solid #15803d; padding-bottom: 3px; font-weight: bold; }
             table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }
             table.data-table th, table.data-table td { border: 1px solid #cbd5e1; padding: 5px 6px; text-align: left; font-size: 7.5pt; word-wrap: break-word; }
-            table.data-table th { background-color: #15803d; color: #ffffff; font-weight: bold; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.3px; }
+            table.data-table th { background-color: #15803d; color: #ffffff; font-weight: bold; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
             table.data-table tr:nth-child(even) td { background-color: #f8fafc; }
         </style></head><body>
             <table class="header-table" align="center">
